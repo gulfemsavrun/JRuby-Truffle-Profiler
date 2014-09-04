@@ -10,12 +10,15 @@
 package org.jruby.truffle.nodes.methods.locals;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
+@NodeInfo(shortName = "read_level")
 public abstract class ReadLevelVariableNode extends FrameSlotNode implements ReadNode {
 
     private final int varLevel;

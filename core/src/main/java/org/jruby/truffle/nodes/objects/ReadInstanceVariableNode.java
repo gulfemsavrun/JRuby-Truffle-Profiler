@@ -12,8 +12,10 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
@@ -24,6 +26,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.objectstorage.*;
 
+@NodeInfo(shortName = "read_instance")
 public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     private final RespecializeHook hook = new RespecializeHook() {

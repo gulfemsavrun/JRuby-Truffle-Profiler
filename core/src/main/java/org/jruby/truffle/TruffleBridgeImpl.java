@@ -13,11 +13,13 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+
 import org.jruby.TruffleBridge;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.nodes.profiler.ProfilerTranslator;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,6 +29,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 
@@ -104,7 +107,42 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, null);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-            return callTarget.call(RubyArguments.pack(null, parentFrame, self, null));
+            //return callTarget.call(RubyArguments.pack(null, parentFrame, self, null));
+            /**
+             * When a profiler related option is enabled, {@link ProfilerTranslator} traverses the module to create {@link RubyWrapper} wrapper nodes.
+             */
+            ProfilerTranslator profilerTranslator = null;
+
+            if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()
+                || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load() || Options.TRUFFLE_PROFILE_OPERATIONS.load() 
+                || Options.TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS.load()) {
+                profilerTranslator = ProfilerTranslator.getInstance();
+                profilerTranslator.translate(parseResult.getRootNode(), true);
+            }
+
+            Object value = callTarget.call(RubyArguments.pack(null, parentFrame, self, null));
+
+            if (Options.TRUFFLE_PROFILE_CALLS.load()) {
+                profilerTranslator.getProfilerResultPrinter().printCallProfilerResults();
+            }
+
+            if (Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()) {
+                profilerTranslator.getProfilerResultPrinter().printControlFlowProfilerResults();
+            }
+
+            if (Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load()) {
+                profilerTranslator.getProfilerResultPrinter().printVariableAccessProfilerResults();
+            }
+
+            if (Options.TRUFFLE_PROFILE_OPERATIONS.load()) {
+                profilerTranslator.getProfilerResultPrinter().printOperationProfilerResults();
+            }
+
+            if (Options.TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS.load()) {
+                profilerTranslator.getProfilerResultPrinter().printAttributeElementProfilerResults();
+            }
+
+            return value;
         } catch (RaiseException e) {
             // TODO(CS): what's this cast about?
             final RubyException rubyException = (RubyException) e.getRubyException();

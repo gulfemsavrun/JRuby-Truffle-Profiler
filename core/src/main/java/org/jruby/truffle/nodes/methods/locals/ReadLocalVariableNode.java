@@ -10,13 +10,16 @@
 package org.jruby.truffle.nodes.methods.locals;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.translator.BodyTranslator;
 
+@NodeInfo(shortName = "read_local")
 public abstract class ReadLocalVariableNode extends FrameSlotNode implements ReadNode {
 
     public ReadLocalVariableNode(RubyContext context, SourceSection sourceSection, FrameSlot slot) {

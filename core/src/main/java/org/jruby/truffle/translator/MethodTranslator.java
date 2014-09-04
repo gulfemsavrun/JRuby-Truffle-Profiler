@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
+
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
@@ -25,11 +26,13 @@ import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.*;
+import org.jruby.truffle.nodes.profiler.ProfilerTranslator;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.util.cli.Options;
 
 class MethodTranslator extends BodyTranslator {
 
@@ -161,6 +164,17 @@ class MethodTranslator extends BodyTranslator {
         }
 
         body = context.getASTProber().probeAsPeriodic(body);
+
+        /**
+         * Profile collection loops such as each, step, collect, loop, etc.
+         * TODO
+         * It's better to do this transformation in the profiler translation step,
+         * but currently information is only available here.
+         */
+
+        if (isBlock && Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()) {
+            body = ProfilerTranslator.getInstance().getProfilerProber().probeAsIteratorLoop(body);
+        }
 
         if (!isBlock) {
             body = new ExceptionTranslatingNode(context, sourceSection, body);

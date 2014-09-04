@@ -139,6 +139,13 @@ public class Options {
     public static final Option<String> TRUFFLE_BACKTRACE_FORMAT = string(TRUFFLE, "truffle.backtrace.format", new String[]{"mri", "rubinius"}, "mri", "How to format backtraces.");
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
     public static final Option<Integer> TRUFFLE_DISPATCH_MEGAMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.megamorphic.max", 255, "Maximum size of a megamorphic call site cache.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_CALLS = bool(TRUFFLE, "truffle.profile.calls", false, "Profile function invocations.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_CONTROL_FLOW = bool(TRUFFLE, "truffle.profile.control_flow", false, "Profile control flow.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_VARIABLE_ACCESSES = bool(TRUFFLE, "truffle.profile.variable_accesses", false, "Profile variable accesses.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_OPERATIONS = bool(TRUFFLE, "truffle.profile.operations", false, "Profile operation nodes.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS = bool(TRUFFLE, "truffle.profile.attributes_elements", false, "Profile attribute element accesses.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_TYPE_DISTRIBUTION = bool(TRUFFLE, "truffle.profile.type_distribution", false, "Profile type distribution.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_SORT = bool(TRUFFLE, "truffle.profile.sort", false, "Sort profile results.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

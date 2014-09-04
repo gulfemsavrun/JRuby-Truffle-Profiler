@@ -68,4 +68,12 @@ public class IfNode extends RubyNode {
         }
     }
 
+    public RubyNode getThen() {
+        return thenBody;
+    }
+
+    public RubyNode getElse() {
+        return elseBody;
+    }
+
 }

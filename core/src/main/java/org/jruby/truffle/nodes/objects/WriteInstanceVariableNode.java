@@ -12,7 +12,9 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.nodes.objectstorage.*;
@@ -22,6 +24,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.objectstorage.*;
 
+@NodeInfo(shortName = "write_instance")
 public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     private final RespecializeHook hook = new RespecializeHook() {

@@ -13,11 +13,14 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.profiler.ProfilerTranslator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.util.cli.Options;
 
 /**
  * Define a method. That is, store the definition of a method and when executed
@@ -85,6 +88,17 @@ public class MethodDefinitionNode extends RubyNode {
 
         final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+
+        /**
+         * When a profiler related option is enabled, {@link ProfilerTranslator} traverses the method to create {@link RubyWrapper} wrapper nodes.
+         */
+        if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load() 
+                || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load() || Options.TRUFFLE_PROFILE_OPERATIONS.load() 
+                || Options.TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS.load()) {
+            ProfilerTranslator profilerTranslator = ProfilerTranslator.getInstance();
+            profilerTranslator.translate(rootNodeClone, false);
+        }
+
         return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
     }
 
