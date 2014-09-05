@@ -83,13 +83,13 @@ if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
 end
 
 benchmarks = [
-  "benchmarks_zippy/binary-trees-z"#,
-#  "benchmarks_zippy/fannkuch-redux-z",
-#  "benchmarks_zippy/mandelbrot-z",
-#  "benchmarks_zippy/n-body-z",
-#  "benchmarks_zippy/pidigits-z",
-#  "benchmarks_zippy/spectral-norm-z",
-#  "benchmarks_zippy/richards-z",
+  "benchmarks_zippy/binary-trees-z",
+  "benchmarks_zippy/fannkuch-redux-z",
+  "benchmarks_zippy/mandelbrot-z",
+  "benchmarks_zippy/n-body-z",
+  "benchmarks_zippy/pidigits-z",
+  "benchmarks_zippy/spectral-norm-z",
+  "benchmarks_zippy/richards-z",
 ]
 
 disable_splitting = [
