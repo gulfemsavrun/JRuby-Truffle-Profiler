@@ -85,12 +85,13 @@ def warmup
     spectral_norm(5)
   end
   
-#   spectral_norm(5500)
+  # zippy warmup could not be applied here because spectral_norm(5500) does not compile necessary functions
+  #spectral_norm(5500)
 end
 
 def sample
-  spectral_norm(5500)
   #(spectral_norm(400) - 1.2742240813922308).abs < 0.000001
+  spectral_norm(5500)
 end
 
 def name

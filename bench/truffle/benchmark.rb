@@ -83,17 +83,17 @@ if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
 end
 
 benchmarks = [
-#  "binary-trees-z",
-#  "fannkuch-redux-z",
-  "mandelbrot-z"#,
-#  "n-body-z"#,
-#  "pidigits-z",
-#  "spectral-norm-z",
-#  "richards-z",
+  "binary-trees-z",
+  "fannkuch-redux-z",
+  "mandelbrot-z",
+  "n-body-z",
+  "pidigits-z",
+  "spectral-norm-z",
+  "richards-z",
 ]
 
 disable_splitting = [
-  "spectral-norm"
+  "spectral-norm-z",
 ]
 
 scores = {}
@@ -111,62 +111,62 @@ File.open("benchmark.results", "w") do |file|
         puts "running " + benchmark
 
         if disable_splitting.include? benchmark
-            splitting = "-J-G:-TruffleSplitting"
-          else
-            splitting = ""
+          splitting = "-J-G:-TruffleSplitting"
+        else
+          splitting = ""
+        end
+
+        if jruby
+          output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
+        elsif profiler_jruby
+          output = `../../bin/jruby -J-server -J-Xmx2G --profile #{benchmark_path}.rb`
+        elsif simple_truffle
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T #{benchmark_path}.rb`
+        else
+          if profile_sort
+            profile_sort_flag = "-Xtruffle.profile.sort=true"
           end
 
-          if jruby
-            output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
-          elsif profiler_jruby
-            output = `../../bin/jruby -J-server -J-Xmx2G --profile #{benchmark_path}.rb`
-          elsif simple_truffle
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T #{benchmark_path}.rb`
-          else
-            if profile_sort
-              profile_sort_flag = "-Xtruffle.profile.sort=true"
-            end
-
-            if profile_calls
-              output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.calls=true #{profile_sort_flag} #{benchmark_path}.rb`
-            end
-            if profile_control_flow
-              output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
-            end
-            if profile_variable_accesses
-              output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
-            end
-            if profile_operations
-              output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
-            end
-            if profile_attributes_elements
-              output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.attributes_elements=true #{profile_sort_flag} #{benchmark_path}.rb`
-            end
-            if profile_type_distribution
-              output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.sort=true #{profile_sort_flag} #{benchmark_path}.rb`
-            end
+          if profile_calls
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.calls=true #{profile_sort_flag} #{benchmark_path}.rb`
           end
-
-          score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
-
-          if score_match.nil?
-            score = 0
-            puts benchmark + " error"
-            puts output
-          else
-            score = score_match[1].to_f
-            puts benchmark + " " + score.to_s
-            file.write("#{benchmark} #{score}\n")
-            total_score = total_score + score
+          if profile_control_flow
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
+          end
+          if profile_variable_accesses
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
+          end
+          if profile_operations
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
+          end
+          if profile_attributes_elements
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.attributes_elements=true #{profile_sort_flag} #{benchmark_path}.rb`
+          end
+          if profile_type_distribution
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.sort=true #{profile_sort_flag} #{benchmark_path}.rb`
           end
         end
 
-        if (number_of_runs > 1)
-          avg_score = total_score / number_of_runs
-          puts benchmark + " avg " + avg_score.to_s
-          file.write("#{benchmark} avg #{score}\n\n")
-          scores[benchmark] = avg_score
+        score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
+
+        if score_match.nil?
+          score = 0
+          puts benchmark + " error"
+          puts output
+        else
+          score = score_match[1].to_f
+          puts benchmark + " " + score.to_s
+          file.write("#{benchmark} #{score}\n")
+          total_score = total_score + score
         end
+      end
+
+      if (number_of_runs > 1)
+        avg_score = total_score / number_of_runs
+        puts benchmark + " avg " + avg_score.to_s
+        file.write("#{benchmark} avg #{score}\n\n")
+        scores[benchmark] = avg_score
+      end
     end
   end
 end

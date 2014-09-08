@@ -387,9 +387,10 @@ class Packet
 end
 
 def warmup
-  2_000.times do
-    run(1)
-  end
+#  2_000.times do
+#    run(1)
+#  end
+  run(3000)
 end
 
 def sample

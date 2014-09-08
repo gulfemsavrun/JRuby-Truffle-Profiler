@@ -174,13 +174,13 @@ def run(n)
 end
 
 def warmup
-  1000000.times do
-    run(1)
-  end
-  
-#  46.times do
-#    run(50000)
+#  1000000.times do
+#    run(1)
 #  end
+
+  46.times do
+    run(50000)
+  end
   
 end
 

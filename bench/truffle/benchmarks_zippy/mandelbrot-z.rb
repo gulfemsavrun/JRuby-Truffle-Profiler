@@ -98,13 +98,13 @@ def mandelbrot(size)
 end
 
 def warmup
-  10000.times do
-    mandelbrot(10)
-  end
-  
-#  12.times do
-#    mandelbrot(300)
+#  10000.times do
+#    mandelbrot(10)
 #  end
+
+  12.times do
+    mandelbrot(300)
+  end
 end
 
 def sample
