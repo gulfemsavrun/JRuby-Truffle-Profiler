@@ -19,7 +19,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 
 public class ProfilerResultPrinter {
 
-    private PrintStream out = System.out;
+    private PrintStream out = System.err;
 
     private final ProfilerProber profilerProber;
 
@@ -38,18 +38,18 @@ public class ProfilerResultPrinter {
              * added to the beginning of the string, minus sign adds padding to the right
              */
 
-            out.format("%-40s", "Function Name");
+            out.format("%-45s", "Function Name");
             out.format("%-20s", "Number of Calls");
             out.format("%-9s", "Line");
             out.format("%-11s", "Column");
             out.format("%-11s", "Length");
             out.println();
-            out.println("===============                                   ===============     ====     ======     ======");
+            out.println("===============                              ===============     ====     ======     ======");
 
             for (ProfilerInstrument instrument : callInstruments) {
                 if (instrument.getCounter() > 0) {
                 	Node node = instrument.getNode();
-                    out.format("%-40s", ((RubyRootNode)node.getRootNode()).getSharedMethodInfo());
+                    out.format("%-45s", ((RubyRootNode)node.getRootNode()).getSharedMethodInfo());
                     out.format("%15s", instrument.getCounter());
                     totalCount = totalCount + instrument.getCounter();
                     out.format("%9s", node.getSourceSection().getStartLine());
