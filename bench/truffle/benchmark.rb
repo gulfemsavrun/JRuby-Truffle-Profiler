@@ -115,17 +115,17 @@ if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
 end
 
 benchmarks = [
-#  "binary-trees-z",
-#  "fannkuch-redux-z",
+  "binary-trees-z",
+  "fannkuch-redux-z",
   "mandelbrot-z",
-  "n-body-z"#,
-#  "pidigits-z",
-#  "spectral-norm-z",
-#  "richards-z",
+  "n-body-z",
+  "pidigits-z",
+  "spectral-norm-z",
+  "richards-z",
 ]
 
 disable_splitting = [
-#  "spectral-norm-z",
+  "spectral-norm-z",
 ]
 
 scores = {}
