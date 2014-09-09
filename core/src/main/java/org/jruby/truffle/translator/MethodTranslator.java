@@ -186,6 +186,13 @@ class MethodTranslator extends BodyTranslator {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final CallTarget callTargetForMethods = withoutBlockDestructureSemantics(callTarget);
 
+            /**
+             * Profile the nodes inside block
+             */
+            if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load() || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load()
+            || Options.TRUFFLE_PROFILE_OPERATIONS.load() || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
+                 ProfilerTranslator.getInstance().translate(rootNode, false);
+            }
             return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods, rootNode);
         } else {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, ignoreLocalVisiblity);

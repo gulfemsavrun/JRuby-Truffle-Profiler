@@ -85,15 +85,15 @@ public class ProfilerResultPrinter {
                     totalCount = totalCount + instrument.getCounter();
                 }
             }
-            
+
             out.println("Total number of executed instruments: " + totalCount);
         }
     }
-    
+
     private void printIteratorLoopProfilerResults() {
         long totalCount = 0;
         List<ProfilerInstrument> iteratorLoopInstruments = getInstruments(profilerProber.getIteratorLoopInstruments()); 
-        
+
         if (iteratorLoopInstruments.size() > 0) {
             printCaption("Iterator Loop Profiling Results");
 
@@ -111,7 +111,7 @@ public class ProfilerResultPrinter {
                     out.println();
                 }
             }
-            
+
             out.println("Total number of executed instruments: " + totalCount);
         }
     }
@@ -186,7 +186,7 @@ public class ProfilerResultPrinter {
   
                 for (TypeDistributionProfilerInstrument profilerInstrument : variableAccessInstruments) {
                     Map<Class<? extends Node>, Long> types = profilerInstrument.getTypes();
-//                    if (types.size() > 2) {
+                    if (types.size() > 2) {
                         Iterator<Map.Entry<Class<? extends Node>, Long>> it = types.entrySet().iterator();
     
                         while (it.hasNext()) {
@@ -205,8 +205,8 @@ public class ProfilerResultPrinter {
                             out.println();
                         }
     
-//                        out.println();
-//                    }
+                        out.println();
+                    }
                 }
             }      
         } else { 
@@ -283,8 +283,57 @@ public class ProfilerResultPrinter {
         }
     }
     
-    public void printAttributeElementProfilerResults() {
-        //printProfilerResults("Read Write Profiling Results", getInstruments(profilerProber.getReadWriteInstruments()));
+    public void printCollectionOperationProfilerResults() {
+        if (Options.TRUFFLE_PROFILE_TYPE_DISTRIBUTION.load()) {
+            long totalCount = 0;
+            List<TypeDistributionProfilerInstrument> collectionOperationInstruments = profilerProber.getCollectionOperationTypeDistributionInstruments();
+
+            if (collectionOperationInstruments.size() > 0) {
+                printCaption("Collection Operator Profiling Results");
+                for (TypeDistributionProfilerInstrument profilerInstrument : collectionOperationInstruments) {
+                    Map<Class<? extends Node>, Long> types = profilerInstrument.getTypes();
+                    if (types.size() > 2) {
+                        Iterator<Map.Entry<Class<? extends Node>, Long>> it = types.entrySet().iterator();
+
+                        while (it.hasNext()) {
+                            Entry<Class<? extends Node>, Long> entry = it.next();
+                            Class<? extends Node> nodeClass = entry.getKey();
+                            Node initialNode = profilerInstrument.getInitialNode();
+                            Long counter = entry.getValue();
+                            totalCount = totalCount + counter;
+                            out.format("%-50s", nodeClass.getSimpleName());
+                            out.format("%15s", counter);
+                            out.format("%9s", initialNode.getSourceSection().getStartLine());
+                            out.format("%11s", initialNode.getSourceSection().getStartColumn());
+                            out.format("%11s", initialNode.getSourceSection().getCharLength());
+                            out.format("%5s", "");
+                            out.format("%-70s", initialNode.getRootNode());
+                            out.println();
+                        }
+
+                        out.println();
+                    }
+                }
+            }
+        } else {
+            long totalCount = 0;
+            List<ProfilerInstrument> collectionOperationInstruments = getInstruments(profilerProber.getCollectionOperationInstruments());
+
+            if (collectionOperationInstruments.size() > 0) {
+                printCaption("Collection Operator Profiling Results");
+
+                for (ProfilerInstrument instrument : collectionOperationInstruments) {
+                    if (instrument.getCounter() > 0) {
+                        Node node = instrument.getNode();
+                        String nodeName =  ((RubyCallNode) node).getName();
+                        printProfilerResult(nodeName, node, instrument.getCounter());
+                        totalCount = totalCount + instrument.getCounter();
+                    }
+                }
+
+                out.println("Total number of executed instruments: " + totalCount);
+            }
+        }
     }
     
     private void printCaption(String caption) {
@@ -297,6 +346,18 @@ public class ProfilerResultPrinter {
         out.format("%-70s", "In Method");
         out.println();
         out.println("=============            ===============     ====     ======     ======     =======================================================");
+    }
+
+    private void printCaptionIterators(String caption) {
+        printBanner(caption, 116);
+        out.format("%-50s", "Node");
+        out.format("%-20s", "Counter");
+        out.format("%-9s", "Line");
+        out.format("%-11s", "Column");
+        out.format("%-11s", "Length");
+        out.format("%-70s", "In Method");
+        out.println();
+        out.println("=============                                     ===============     ====     ======     ======     ================================================");
     }
 
     private void printProfilerResult(String nodeName, Node node, long counter) {

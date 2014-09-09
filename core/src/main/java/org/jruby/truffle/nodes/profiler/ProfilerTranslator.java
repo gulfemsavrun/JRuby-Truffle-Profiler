@@ -30,7 +30,7 @@ public class ProfilerTranslator implements NodeVisitor {
     private final ProfilerProber profilerProber;
     private final ProfilerResultPrinter resultPrinter;    
     private final List<String> operators;
-    private final List<String> arrays;
+    private final List<String> collectionAccessOperators;
     
     private static boolean translatingModule = false;
     
@@ -51,7 +51,7 @@ public class ProfilerTranslator implements NodeVisitor {
          * x = a[0] ------------> RubyCallNode ("[]")  ----> Read from an array
          * a[0] = 40 -----------> RubyCallNode ("[]=") ----> Write into an array
          */
-        arrays = Arrays.asList("[]", "[]=");
+        collectionAccessOperators = Arrays.asList("[]", "[]=");
     }
 
     public void translate(RootNode rootNode, boolean isModule) {
@@ -82,8 +82,8 @@ public class ProfilerTranslator implements NodeVisitor {
             profileOperations(node);
         }
         
-        if (Options.TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS.load()) {
-            profileArrays(node);
+        if (Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
+            profileCollectionOperations(node);
         }
         
         return true;
@@ -172,12 +172,12 @@ public class ProfilerTranslator implements NodeVisitor {
       }
     }
     
-    private void profileArrays(Node node) {
+    private void profileCollectionOperations(Node node) {
         if (node instanceof RubyCallNode) {
             RubyCallNode callNode = (RubyCallNode) node;
             String name = callNode.getName();          
-            if (arrays.contains(name)) {
-                createAttributeElementWrapper(callNode);
+            if (collectionAccessOperators.contains(name)) {
+                createCollectionOperationWrapper(callNode);
             } 
         }
     }
@@ -219,8 +219,8 @@ public class ProfilerTranslator implements NodeVisitor {
         return wrapperNode;
     }
     
-    private RubyWrapper createAttributeElementWrapper(RubyNode node) {
-        RubyWrapper wrapperNode = profilerProber.probeAsAttributeElement(node);
+    private RubyWrapper createCollectionOperationWrapper(RubyNode node) {
+        RubyWrapper wrapperNode = profilerProber.probeAsCollectionOperation(node);
         replaceNodeWithWrapper(node, wrapperNode);
         return wrapperNode;
     }

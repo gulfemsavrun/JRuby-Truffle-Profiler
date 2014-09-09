@@ -6,7 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-reference = false
+create_reference = false
 jruby = false
 profiler_jruby = false
 simple_truffle = false
@@ -15,7 +15,7 @@ profile_calls = false
 profile_control_flow = false
 profile_variable_accesses = false
 profile_operations = false
-profile_attributes_elements = false
+profile_collection_operations = false
 profile_type_distribution = false
 profile_sort = false
 profile_sort_flag = ""
@@ -27,6 +27,8 @@ while not args.empty?
   arg = args.shift
 
   case arg
+  when "-create-reference"
+    create_reference = true
   when "-jruby"
     puts "RUNNING SIMPLE JRUBY"
     jruby = true   
@@ -50,9 +52,9 @@ while not args.empty?
   when "-profile-operations"
     puts "PROFILING OPERATIONS"
     profile_operations = true
-  when "-profile-attributes-elements"
-    puts "PROFILING ATTRIBUTES ELEMENTS"
-    profile_attributes_elements = true
+  when "-profile-collection-operations"
+    puts "PROFILING COLLECTION OPERATIONS"
+    profile_collection_operations = true
   when "-profile-type-distribution"
     puts "PROFILING TYPE DISTRIBUTION"
     profile_type_distribution = true
@@ -83,16 +85,29 @@ end
 
 reference_scores = {}
 
-file = 0
+file = nil
+reference_file = nil
+overhead_file = nil
 
-if calculate_overhead
-  File.open("benchmark.results").each do |line|
+if create_reference
+  reference_file = File.open("benchmark.reference", "w")
+  reference_file.write("-number-of-runs #{number_of_runs}\n")
+elsif calculate_overhead
+  reference_file = File.open("benchmark.reference")
+  reference_file.each do |line|
     key, value = line.split
-    reference_scores[key] = value.to_f
-  end  
-else
-  file = File.open("benchmark.results", "w")
+    if key == "-number-of-runs"
+      number_of_runs_reference = value.to_i
+    else
+      reference_scores[key] = value.to_f
+    end
+  end
+  overhead_file = File.open("benchmark.overhead",  "w")
+  overhead_file.write("-number-of-runs #{number_of_runs}\n")
 end
+
+file = File.open("benchmark.results", "w")
+file.write("-number-of-runs #{number_of_runs}\n")
 
 
 if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
@@ -100,17 +115,17 @@ if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
 end
 
 benchmarks = [
-  "binary-trees-z",
-  "fannkuch-redux-z",
+#  "binary-trees-z",
+#  "fannkuch-redux-z",
   "mandelbrot-z",
-  "n-body-z",
-  "pidigits-z",
-  "spectral-norm-z",
-  "richards-z",
+  "n-body-z"#,
+#  "pidigits-z",
+#  "spectral-norm-z",
+#  "richards-z",
 ]
 
 disable_splitting = [
-  "spectral-norm-z",
+#  "spectral-norm-z",
 ]
 
 scores = {}
@@ -120,6 +135,7 @@ folder_name = "benchmarks_zippy"
 benchmarks.each do |benchmark|
   benchmark_path = folder_name + "/" + benchmark
   total_score = 0
+  total_overhead = 0
 
   if number_of_runs > 0
     for run in 1..number_of_runs
@@ -155,8 +171,8 @@ benchmarks.each do |benchmark|
         if profile_operations
           output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
-        if profile_attributes_elements
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.attributes_elements=true #{profile_sort_flag} #{benchmark_path}.rb`
+        if profile_collection_operations
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.collection_operations=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
         if profile_type_distribution
           output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.sort=true #{profile_sort_flag} #{benchmark_path}.rb`
@@ -177,11 +193,19 @@ benchmarks.each do |benchmark|
           puts "reference_scores[benchmark] " + reference_scores[benchmark].to_s
           difference = score - reference_scores[benchmark]
           overhead_percentage = difference / reference_scores[benchmark] * 100
-          puts "overhead " + overhead_percentage.to_s
-          puts "#{benchmark.ljust(15)} #{overhead_percentage.to_s.rjust(6)}%"
+          puts "#{benchmark} overhead: #{overhead_percentage}%"
+
+          overhead_file.write("#{benchmark} #{overhead_percentage}\n")
+          if (overhead_percentage > 0)
+            total_overhead = total_overhead + overhead_percentage
+          end
         else
-          file.write("#{benchmark} #{score}\n")
+          if (create_reference and number_of_runs == 1)
+            reference_file.write("#{benchmark} #{score}\n")
+          end
         end
+
+        file.write("#{benchmark} #{score}\n")
         total_score = total_score + score
       end
     end
@@ -189,10 +213,18 @@ benchmarks.each do |benchmark|
     if (number_of_runs > 1)
       avg_score = total_score / number_of_runs
       puts benchmark + " avg " + avg_score.to_s
-      if calculate_overhead 
-      else 
-        file.write("#{benchmark} avg #{avg_score}\n\n")
+
+      if create_reference
+        reference_file.write("#{benchmark} #{avg_score}\n")
       end
+
+      if calculate_overhead
+        avg_overhead_percentage = total_overhead / number_of_runs
+        puts benchmark + " avg overhead " + avg_overhead_percentage.to_s
+        overhead_file.write("avg: #{benchmark} #{avg_overhead_percentage}\n\n")
+      end
+
+      file.write("avg: #{benchmark} #{avg_score}\n\n")
     end
   end
 end

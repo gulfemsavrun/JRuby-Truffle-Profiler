@@ -94,7 +94,7 @@ public class MethodDefinitionNode extends RubyNode {
          */
         if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load() 
                 || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load() || Options.TRUFFLE_PROFILE_OPERATIONS.load() 
-                || Options.TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS.load()) {
+                || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
             ProfilerTranslator profilerTranslator = ProfilerTranslator.getInstance();
             profilerTranslator.translate(rootNodeClone, false);
         }

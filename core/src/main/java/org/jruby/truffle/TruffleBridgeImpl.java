@@ -115,7 +115,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
             if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()
                 || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load() || Options.TRUFFLE_PROFILE_OPERATIONS.load() 
-                || Options.TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS.load()) {
+                || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
                 profilerTranslator = ProfilerTranslator.getInstance();
                 profilerTranslator.translate(parseResult.getRootNode(), true);
             }
@@ -138,8 +138,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 profilerTranslator.getProfilerResultPrinter().printOperationProfilerResults();
             }
 
-            if (Options.TRUFFLE_PROFILE_ATTRIBUTES_ELEMENTS.load()) {
-                profilerTranslator.getProfilerResultPrinter().printAttributeElementProfilerResults();
+            if (Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
+                profilerTranslator.getProfilerResultPrinter().printCollectionOperationProfilerResults();
             }
 
             return value;

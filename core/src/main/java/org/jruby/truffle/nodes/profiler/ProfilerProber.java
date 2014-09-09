@@ -22,11 +22,11 @@ public class ProfilerProber implements RubyNodeProber {
     private List<ProfilerInstrument> iteratorLoopInstruments;
     private List<ProfilerInstrument> variableAccessInstruments;
     private List<ProfilerInstrument> operationInstruments;
-    private List<ProfilerInstrument> attributeElementInstruments;
+    private List<ProfilerInstrument> collectionOperationInstruments;
     
     private List<TypeDistributionProfilerInstrument> variableAccessTypeDistributionInstruments;
     private List<TypeDistributionProfilerInstrument> operationTypeDistributionInstruments;
-    private List<TypeDistributionProfilerInstrument> attributeElementTypeDistributionInstruments;
+    private List<TypeDistributionProfilerInstrument> collectionOperationTypeDistributionInstruments;
     
     private Map<ProfilerInstrument, List<ProfilerInstrument>> ifInstruments;
 
@@ -37,10 +37,10 @@ public class ProfilerProber implements RubyNodeProber {
         iteratorLoopInstruments = new ArrayList<>();
         variableAccessInstruments = new ArrayList<>();
         operationInstruments = new ArrayList<>();
-        attributeElementInstruments = new ArrayList<>();  
+        collectionOperationInstruments = new ArrayList<>();
         variableAccessTypeDistributionInstruments = new ArrayList<>();
         operationTypeDistributionInstruments = new ArrayList<>();
-        attributeElementTypeDistributionInstruments = new ArrayList<>();
+        collectionOperationTypeDistributionInstruments = new ArrayList<>();
         ifInstruments = new LinkedHashMap<>();
     }
     
@@ -141,14 +141,14 @@ public class ProfilerProber implements RubyNodeProber {
         return wrapper;
     }
     
-    public RubyWrapper probeAsAttributeElement(RubyNode node) {
+    public RubyWrapper probeAsCollectionOperation(RubyNode node) {
         RubyWrapper wrapper = createWrapper(node);
         if (Options.TRUFFLE_PROFILE_TYPE_DISTRIBUTION.load()) {
             TypeDistributionProfilerInstrument profilerInstrument = createAttachProfilerTypeDistributionInstrument(wrapper);
-            attributeElementTypeDistributionInstruments.add(profilerInstrument);
+            collectionOperationTypeDistributionInstruments.add(profilerInstrument);
         } else {
             ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
-            attributeElementInstruments.add(profilerInstrument);
+            collectionOperationInstruments.add(profilerInstrument);
         }
         return wrapper;
     }
@@ -202,8 +202,8 @@ public class ProfilerProber implements RubyNodeProber {
         return operationInstruments;
     }
 
-    public List<ProfilerInstrument> getAttributeElementInstruments() {
-        return attributeElementInstruments;
+    public List<ProfilerInstrument> getCollectionOperationInstruments() {
+        return collectionOperationInstruments;
     }
     
     public List<TypeDistributionProfilerInstrument> getVariableAccessTypeDistributionInstruments() {
@@ -214,8 +214,8 @@ public class ProfilerProber implements RubyNodeProber {
         return operationTypeDistributionInstruments;
     }
 
-    public List<TypeDistributionProfilerInstrument> getAttributeElementTypeDistributionInstruments() {
-        return attributeElementTypeDistributionInstruments;
+    public List<TypeDistributionProfilerInstrument> getCollectionOperationTypeDistributionInstruments() {
+        return collectionOperationTypeDistributionInstruments;
     }
     
     
