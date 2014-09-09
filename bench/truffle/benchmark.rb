@@ -83,11 +83,15 @@ end
 
 reference_scores = {}
 
+file = 0
+
 if calculate_overhead
   File.open("benchmark.results").each do |line|
     key, value = line.split
     reference_scores[key] = value.to_f
   end  
+else
+  file = File.open("benchmark.results", "w")
 end
 
 
@@ -176,7 +180,6 @@ benchmarks.each do |benchmark|
           puts "overhead " + overhead_percentage.to_s
           puts "#{benchmark.ljust(15)} #{overhead_percentage.round(2).to_s.rjust(6)}%"
         else
-          file = File.open("benchmark.results", "w")
           file.write("#{benchmark} #{score}\n")
         end
         total_score = total_score + score
