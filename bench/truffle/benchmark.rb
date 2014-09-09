@@ -19,6 +19,7 @@ profile_attributes_elements = false
 profile_type_distribution = false
 profile_sort = false
 profile_sort_flag = ""
+calculate_overhead = false
 
 args = ARGV.dup
 
@@ -57,6 +58,8 @@ while not args.empty?
     profile_type_distribution = true
   when "-profile-sort"
     profile_sort = true
+  when "-calculate-overhead"
+    calculate_overhead = true  
   when "--help", "-help", "-h"
     puts "Note: use a system Ruby to run this script, not the development JRuby, as that seems to sometimes get in a twist"
     puts
@@ -78,18 +81,28 @@ while not args.empty?
   end
 end
 
+reference_scores = {}
+
+if calculate_overhead
+  File.open("benchmark.results").each do |line|
+    key, value = line.split
+    reference_scores[key] = value.to_f
+  end  
+end
+
+
 if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
   puts "warning: couldn't find $JAVACMD - set this to the path of the Java command in graalvm-jdk1.8.0 or a build of the Graal repo"
 end
 
 benchmarks = [
-  "binary-trees-z",
-  "fannkuch-redux-z",
-  "mandelbrot-z",
-  "n-body-z",
-  "pidigits-z",
-  "spectral-norm-z",
-  "richards-z",
+#  "binary-trees-z",
+#  "fannkuch-redux-z",
+  "mandelbrot-z"#,
+#  "n-body-z",
+#  "pidigits-z",
+#  "spectral-norm-z",
+#  "richards-z",
 ]
 
 disable_splitting = [
@@ -100,72 +113,82 @@ scores = {}
 
 folder_name = "benchmarks_zippy"
 
-File.open("benchmark.results", "w") do |file|
-  benchmarks.each do |benchmark|
-    benchmark_path = folder_name + "/" + benchmark
-    total_score = 0
+benchmarks.each do |benchmark|
+  benchmark_path = folder_name + "/" + benchmark
+  total_score = 0
 
-    if number_of_runs > 0
-      for run in 1..number_of_runs
-        puts "run " + run.to_s
-        puts "running " + benchmark
+  if number_of_runs > 0
+    for run in 1..number_of_runs
+      puts "run " + run.to_s
+      puts "running " + benchmark
 
-        if disable_splitting.include? benchmark
-          splitting = "-J-G:-TruffleSplitting"
-        else
-          splitting = ""
+      if disable_splitting.include? benchmark
+        splitting = "-J-G:-TruffleSplitting"
+      else
+        splitting = ""
+      end
+
+      if jruby
+        output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
+      elsif profiler_jruby
+        output = `../../bin/jruby -J-server -J-Xmx2G --profile #{benchmark_path}.rb`
+      elsif simple_truffle
+        output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T #{benchmark_path}.rb`
+      else
+        if profile_sort
+          profile_sort_flag = "-Xtruffle.profile.sort=true"
         end
 
-        if jruby
-          output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
-        elsif profiler_jruby
-          output = `../../bin/jruby -J-server -J-Xmx2G --profile #{benchmark_path}.rb`
-        elsif simple_truffle
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T #{benchmark_path}.rb`
-        else
-          if profile_sort
-            profile_sort_flag = "-Xtruffle.profile.sort=true"
-          end
-
-          if profile_calls
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.calls=true #{profile_sort_flag} #{benchmark_path}.rb`
-          end
-          if profile_control_flow
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
-          end
-          if profile_variable_accesses
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
-          end
-          if profile_operations
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
-          end
-          if profile_attributes_elements
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.attributes_elements=true #{profile_sort_flag} #{benchmark_path}.rb`
-          end
-          if profile_type_distribution
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.sort=true #{profile_sort_flag} #{benchmark_path}.rb`
-          end
+        if profile_calls
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.calls=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
-
-        score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
-
-        if score_match.nil?
-          score = 0
-          puts benchmark + " error"
-          puts output
-        else
-          score = score_match[1].to_f
-          puts benchmark + " " + score.to_s
-          file.write("#{benchmark} #{score}\n")
-          total_score = total_score + score
+        if profile_control_flow
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
+        end
+        if profile_variable_accesses
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
+        end
+        if profile_operations
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
+        end
+        if profile_attributes_elements
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.attributes_elements=true #{profile_sort_flag} #{benchmark_path}.rb`
+        end
+        if profile_type_distribution
+          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.sort=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
       end
 
-      if (number_of_runs > 1)
-        avg_score = total_score / number_of_runs
-        puts benchmark + " avg " + avg_score.to_s
-        file.write("#{benchmark} avg #{score}\n\n")
-        scores[benchmark] = avg_score
+      score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
+
+      if score_match.nil?
+        score = 0
+        puts benchmark + " error"
+        puts output
+      else
+        score = score_match[1].to_f
+        puts benchmark + " " + score.to_s
+        
+        if calculate_overhead 
+          puts "reference_scores[benchmark] " + reference_scores[benchmark].to_s
+          difference = score - reference_scores[benchmark]
+          overhead_percentage = difference / reference_scores[benchmark] * 100
+          puts "overhead " + overhead_percentage.to_s
+          puts "#{benchmark.ljust(15)} #{overhead_percentage.round(2).to_s.rjust(6)}%"
+        else
+          file = File.open("benchmark.results", "w")
+          file.write("#{benchmark} #{score}\n")
+        end
+        total_score = total_score + score
+      end
+    end
+
+    if (number_of_runs > 1)
+      avg_score = total_score / number_of_runs
+      puts benchmark + " avg " + avg_score.to_s
+      if calculate_overhead 
+      else 
+        file.write("#{benchmark} avg #{avg_score}\n\n")
       end
     end
   end
