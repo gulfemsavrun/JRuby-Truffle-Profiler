@@ -7,6 +7,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.control.BreakNode;
 import org.jruby.truffle.nodes.control.IfNode;
+import org.jruby.truffle.nodes.control.NextNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.debug.RubyWrapper;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
@@ -98,10 +99,9 @@ public class ProfilerTranslator implements NodeVisitor {
     private void profileControlFlow(Node node) {
         profileLoops(node);
         profileIfs(node);
-        profileBreakContinues(node);
+        profileBreakNextNodes(node);
     }
 
-    
     private void profileLoops(Node node) {
         if (node instanceof WhileNode) {
         	WhileNode loopNodeNode = (WhileNode) node;
@@ -139,10 +139,12 @@ public class ProfilerTranslator implements NodeVisitor {
             }
         }
     }
-    
-    private void profileBreakContinues(Node node) {
+
+    private void profileBreakNextNodes(Node node) {
         if (node instanceof BreakNode) {
-            //createBreakContinueWrapper((PNode) node);
+            createBreakNextWrapper((RubyNode) node);
+        } else if (node instanceof NextNode) {
+            createBreakNextWrapper((RubyNode) node);
         }
     }
     
@@ -206,6 +208,12 @@ public class ProfilerTranslator implements NodeVisitor {
         replaceNodeWithWrapper(ifNode, wrappers.get(0));
         replaceNodeWithWrapper(thenNode, wrappers.get(1));
     }
+
+    private RubyWrapper createBreakNextWrapper(RubyNode node) {
+        RubyWrapper wrapperNode = profilerProber.probeAsBreakNext(node);
+        replaceNodeWithWrapper(node, wrapperNode);
+        return wrapperNode;
+    }
     
     private RubyWrapper createReadWriteWrapper(RubyNode node) {
         RubyWrapper wrapperNode = profilerProber.probeAsVariableAccess(node);
@@ -221,12 +229,6 @@ public class ProfilerTranslator implements NodeVisitor {
     
     private RubyWrapper createCollectionOperationWrapper(RubyNode node) {
         RubyWrapper wrapperNode = profilerProber.probeAsCollectionOperation(node);
-        replaceNodeWithWrapper(node, wrapperNode);
-        return wrapperNode;
-    }
-    
-    private RubyNode createWrapper(RubyNode node) {
-        RubyNode wrapperNode = profilerProber.probeAsStatement(node);
         replaceNodeWithWrapper(node, wrapperNode);
         return wrapperNode;
     }

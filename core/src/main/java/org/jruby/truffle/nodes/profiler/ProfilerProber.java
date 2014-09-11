@@ -20,13 +20,12 @@ public class ProfilerProber implements RubyNodeProber {
     private List<ProfilerInstrument> callInstruments;
     private List<ProfilerInstrument> whileInstruments;
     private List<ProfilerInstrument> iteratorLoopInstruments;
+    private List<ProfilerInstrument> breakNextInstruments;
     private List<ProfilerInstrument> variableAccessInstruments;
     private List<ProfilerInstrument> operationInstruments;
     private List<ProfilerInstrument> collectionOperationInstruments;
     
     private List<TypeDistributionProfilerInstrument> variableAccessTypeDistributionInstruments;
-    private List<TypeDistributionProfilerInstrument> operationTypeDistributionInstruments;
-    private List<TypeDistributionProfilerInstrument> collectionOperationTypeDistributionInstruments;
     
     private Map<ProfilerInstrument, List<ProfilerInstrument>> ifInstruments;
 
@@ -35,12 +34,11 @@ public class ProfilerProber implements RubyNodeProber {
     	callInstruments = new ArrayList<>();
         whileInstruments = new ArrayList<>();
         iteratorLoopInstruments = new ArrayList<>();
+        breakNextInstruments = new ArrayList<>();
         variableAccessInstruments = new ArrayList<>();
         operationInstruments = new ArrayList<>();
         collectionOperationInstruments = new ArrayList<>();
         variableAccessTypeDistributionInstruments = new ArrayList<>();
-        operationTypeDistributionInstruments = new ArrayList<>();
-        collectionOperationTypeDistributionInstruments = new ArrayList<>();
         ifInstruments = new LinkedHashMap<>();
     }
     
@@ -115,6 +113,13 @@ public class ProfilerProber implements RubyNodeProber {
 
         return wrappers;
     }
+
+    public RubyWrapper probeAsBreakNext(RubyNode node) {
+        RubyWrapper wrapper = createWrapper(node);
+        ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
+        breakNextInstruments.add(profilerInstrument);
+        return wrapper;
+    }
         
     public RubyWrapper probeAsVariableAccess(RubyNode node) {
         RubyWrapper wrapper = createWrapper(node);
@@ -131,25 +136,15 @@ public class ProfilerProber implements RubyNodeProber {
     
     public RubyWrapper probeAsOperation(RubyNode node) {
         RubyWrapper wrapper = createWrapper(node);
-        if (Options.TRUFFLE_PROFILE_TYPE_DISTRIBUTION.load()) {
-            TypeDistributionProfilerInstrument profilerInstrument = createAttachProfilerTypeDistributionInstrument(wrapper);
-            operationTypeDistributionInstruments.add(profilerInstrument);
-        } else {
-            ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
-            operationInstruments.add(profilerInstrument);
-        }
+        ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
+        operationInstruments.add(profilerInstrument);
         return wrapper;
     }
     
     public RubyWrapper probeAsCollectionOperation(RubyNode node) {
         RubyWrapper wrapper = createWrapper(node);
-        if (Options.TRUFFLE_PROFILE_TYPE_DISTRIBUTION.load()) {
-            TypeDistributionProfilerInstrument profilerInstrument = createAttachProfilerTypeDistributionInstrument(wrapper);
-            collectionOperationTypeDistributionInstruments.add(profilerInstrument);
-        } else {
-            ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
-            collectionOperationInstruments.add(profilerInstrument);
-        }
+        ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
+        collectionOperationInstruments.add(profilerInstrument);
         return wrapper;
     }
     
@@ -194,6 +189,10 @@ public class ProfilerProber implements RubyNodeProber {
         return iteratorLoopInstruments;
     }
 
+    public List<ProfilerInstrument> getBreakNextInstruments() {
+        return breakNextInstruments;
+    }
+
     public List<ProfilerInstrument> getVariableAccessInstruments() {
         return variableAccessInstruments;
     }
@@ -210,15 +209,6 @@ public class ProfilerProber implements RubyNodeProber {
         return variableAccessTypeDistributionInstruments;
     }
 
-    public List<TypeDistributionProfilerInstrument> getOperationTypeDistributionInstruments() {
-        return operationTypeDistributionInstruments;
-    }
-
-    public List<TypeDistributionProfilerInstrument> getCollectionOperationTypeDistributionInstruments() {
-        return collectionOperationTypeDistributionInstruments;
-    }
-    
-    
     public Map<ProfilerInstrument, List<ProfilerInstrument>> getIfInstruments() {
         return ifInstruments;
     }

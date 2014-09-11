@@ -13,11 +13,13 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 
+@NodeInfo(shortName = "next")
 public class NextNode extends RubyNode {
 
     @Child private RubyNode child;
