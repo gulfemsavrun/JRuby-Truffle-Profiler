@@ -24,10 +24,8 @@ public class ProfilerProber implements RubyNodeProber {
     private List<ProfilerInstrument> variableAccessInstruments;
     private List<ProfilerInstrument> operationInstruments;
     private List<ProfilerInstrument> collectionOperationInstruments;
-    
-    private List<TypeDistributionProfilerInstrument> variableAccessTypeDistributionInstruments;
-    
     private Map<ProfilerInstrument, List<ProfilerInstrument>> ifInstruments;
+    private List<TypeDistributionProfilerInstrument> variableAccessTypeDistributionInstruments;
 
     public ProfilerProber() {
         nodeInstruments = new ArrayList<>();
@@ -38,8 +36,8 @@ public class ProfilerProber implements RubyNodeProber {
         variableAccessInstruments = new ArrayList<>();
         operationInstruments = new ArrayList<>();
         collectionOperationInstruments = new ArrayList<>();
-        variableAccessTypeDistributionInstruments = new ArrayList<>();
         ifInstruments = new LinkedHashMap<>();
+        variableAccessTypeDistributionInstruments = new ArrayList<>();
     }
     
     @Override

@@ -115,13 +115,13 @@ if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
 end
 
 benchmarks = [
-  "binary-trees-z",
-  "fannkuch-redux-z",
+#  "binary-trees-z",
+#  "fannkuch-redux-z",
   "mandelbrot-z",
-  "n-body-z",
-  "pidigits-z",
-  "spectral-norm-z",
-  "richards-z",
+  "n-body-z"#,
+#  "pidigits-z",
+#  "spectral-norm-z",
+#  "richards-z",
 ]
 
 disable_splitting = [
@@ -166,16 +166,17 @@ benchmarks.each do |benchmark|
           output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
         if profile_variable_accesses
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
+          if profile_type_distribution
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true -Xtruffle.profile.type_distribution=true #{profile_sort_flag} #{benchmark_path}.rb`
+          else
+            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
+          end
         end
         if profile_operations
           output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
         if profile_collection_operations
           output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.collection_operations=true #{profile_sort_flag} #{benchmark_path}.rb`
-        end
-        if profile_type_distribution
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.sort=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
       end
 
