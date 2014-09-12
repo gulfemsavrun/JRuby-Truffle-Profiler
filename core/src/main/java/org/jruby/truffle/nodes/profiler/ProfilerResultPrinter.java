@@ -29,7 +29,7 @@ public class ProfilerResultPrinter {
     
     public void printCallProfilerResults() {
         long totalCount = 0;
-        List<ProfilerInstrument> callInstruments = getInstruments(profilerProber.getCallInstruments());
+        List<TimeProfilerInstrument> callInstruments = profilerProber.getCallInstruments();
 
         if (callInstruments.size() > 0) {
             printBanner("Call Profiling Results", 72);
@@ -40,22 +40,25 @@ public class ProfilerResultPrinter {
 
             out.format("%-45s", "Function Name");
             out.format("%-20s", "Number of Calls");
+            out.format("%-20s", "Total Time");
             out.format("%-9s", "Line");
             out.format("%-11s", "Column");
             out.format("%-11s", "Length");
             out.println();
-            out.println("===============                              ===============     ====     ======     ======");
+            out.println("===============                              ===============     ===============     ====     ======     ======");
 
-            for (ProfilerInstrument instrument : callInstruments) {
+            for (TimeProfilerInstrument instrument : callInstruments) {
                 if (instrument.getCounter() > 0) {
                 	Node node = instrument.getNode();
                     out.format("%-45s", ((RubyRootNode)node.getRootNode()).getSharedMethodInfo());
                     out.format("%15s", instrument.getCounter());
-                    totalCount = totalCount + instrument.getCounter();
+                    out.format("%20s", (instrument.getTime() / 1000000000));
                     out.format("%9s", node.getSourceSection().getStartLine());
                     out.format("%11s", node.getSourceSection().getStartColumn());
                     out.format("%11s", node.getSourceSection().getCharLength());
                     out.println();
+
+                    totalCount = totalCount + instrument.getCounter();
                 }
             }
             

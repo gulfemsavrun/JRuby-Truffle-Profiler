@@ -16,8 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 
 public class ProfilerProber implements RubyNodeProber {
 
-    private List<ProfilerInstrument> nodeInstruments;
-    private List<ProfilerInstrument> callInstruments;
+    private List<TimeProfilerInstrument> callInstruments;
     private List<ProfilerInstrument> whileInstruments;
     private List<ProfilerInstrument> iteratorLoopInstruments;
     private List<ProfilerInstrument> breakNextInstruments;
@@ -28,7 +27,6 @@ public class ProfilerProber implements RubyNodeProber {
     private List<TypeDistributionProfilerInstrument> variableAccessTypeDistributionInstruments;
 
     public ProfilerProber() {
-        nodeInstruments = new ArrayList<>();
     	callInstruments = new ArrayList<>();
         whileInstruments = new ArrayList<>();
         iteratorLoopInstruments = new ArrayList<>();
@@ -47,17 +45,13 @@ public class ProfilerProber implements RubyNodeProber {
 
     @Override
     public RubyNode probeAsStatement(RubyNode node) {
-    	RubyWrapper wrapper = createWrapper(node);
-        wrapper.tagAs(StandardSyntaxTag.STATEMENT);        
-    	ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
-        nodeInstruments.add(profilerInstrument);    	
-        return wrapper;
+        return null;
     }
     
     public RubyWrapper probeAsCall(RubyNode node) {
     	RubyWrapper wrapper = createWrapper(node);
     	wrapper.tagAs(StandardSyntaxTag.START_METHOD);
-    	ProfilerInstrument profilerInstrument = createAttachProfilerInstrument(wrapper);
+        TimeProfilerInstrument profilerInstrument = createAttachTimeProfilerInstrument(wrapper);
         callInstruments.add(profilerInstrument);
         return wrapper;
     }
@@ -164,18 +158,21 @@ public class ProfilerProber implements RubyNodeProber {
         wrapper.getProbe().addInstrument(profilerInstrument);
         return profilerInstrument;
     }
-    
+
+    private static TimeProfilerInstrument createAttachTimeProfilerInstrument(RubyWrapper wrapper) {
+        TimeProfilerInstrument profilerInstrument = new TimeProfilerInstrument(wrapper.getChild());
+        profilerInstrument.assignSourceSection(wrapper.getChild().getSourceSection());
+        wrapper.getProbe().addInstrument(profilerInstrument);
+        return profilerInstrument;
+    }
+
     private static TypeDistributionProfilerInstrument createAttachProfilerTypeDistributionInstrument(RubyWrapper wrapper) {
         TypeDistributionProfilerInstrument profilerInstrument = new TypeDistributionProfilerInstrument(wrapper.getChild());
         wrapper.getProbe().addInstrument(profilerInstrument);
         return profilerInstrument;
     }
-    
-    public List<ProfilerInstrument> getNodeInstruments() {
-        return nodeInstruments;
-    }
-    
-    public List<ProfilerInstrument> getCallInstruments() {
+
+    public List<TimeProfilerInstrument> getCallInstruments() {
         return callInstruments;
     }
     
