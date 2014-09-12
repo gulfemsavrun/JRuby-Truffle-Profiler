@@ -11,7 +11,7 @@ import org.jruby.truffle.nodes.control.NextNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.debug.RubyWrapper;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
-import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
+import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.methods.locals.WriteLevelVariableNode;
@@ -91,8 +91,8 @@ public class ProfilerTranslator implements NodeVisitor {
     }
     
     private void profileCalls(Node node) {   
-        if (node instanceof CatchRetryAsErrorNode) {
-        	createCallWrapper((RubyNode)node);
+        if (node instanceof ExceptionTranslatingNode) {
+            createCallWrapper((RubyNode)node);
         }
     }
     
@@ -184,7 +184,7 @@ public class ProfilerTranslator implements NodeVisitor {
         }
     }
     
-    private RubyWrapper createCallWrapper(RubyNode node) {
+    public RubyWrapper createCallWrapper(RubyNode node) {
     	RubyWrapper wrapperNode = profilerProber.probeAsCall(node);
         replaceNodeWithWrapper(node, wrapperNode);
         return wrapperNode;
