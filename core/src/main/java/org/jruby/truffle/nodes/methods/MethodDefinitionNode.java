@@ -88,6 +88,7 @@ public class MethodDefinitionNode extends RubyNode {
 
         final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+        RubyMethod rubyMethod = new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
 
         /**
          * When a profiler related option is enabled, {@link ProfilerTranslator} traverses the method to create {@link RubyWrapper} wrapper nodes.
@@ -96,10 +97,10 @@ public class MethodDefinitionNode extends RubyNode {
                 || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load() || Options.TRUFFLE_PROFILE_OPERATIONS.load() 
                 || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
             ProfilerTranslator profilerTranslator = ProfilerTranslator.getInstance();
-            profilerTranslator.translate(rootNodeClone, false);
+            profilerTranslator.translate(rootNodeClone, false, false, rubyMethod);
         }
 
-        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
+        return rubyMethod;
     }
 
     @Override

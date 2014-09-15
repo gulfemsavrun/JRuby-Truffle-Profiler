@@ -11,11 +11,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.call.NewCachedBoxedDispatchNode;
+import org.jruby.truffle.nodes.call.NewCachedDispatchNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
+import org.jruby.truffle.nodes.debug.RubyWrapper;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
+import com.oracle.truffle.api.instrument.impl.InstrumentationNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.nodes.NodeVisitor;
 
 public class ProfilerResultPrinter {
 
@@ -26,44 +33,131 @@ public class ProfilerResultPrinter {
     public ProfilerResultPrinter(ProfilerProber profilerProber) {
         this.profilerProber = profilerProber;
     }
-    
+
+    static long excludedTime = 0;
+
     public void printCallProfilerResults() {
-        long totalCount = 0;
+        List<MethodBodyInstrument> methodBodyInstruments = profilerProber.getMethodBodyInstruments();
         List<TimeProfilerInstrument> callInstruments = profilerProber.getCallInstruments();
 
-        if (callInstruments.size() > 0) {
-            printBanner("Call Profiling Results", 72);
+        if (methodBodyInstruments.size() > 0) {
+            printBanner("Call Time Profiling Results", 72);
             /**
              * 50 is the length of the text by default padding left padding is added, so space is
              * added to the beginning of the string, minus sign adds padding to the right
              */
 
-            out.format("%-45s", "Function Name");
-            out.format("%-20s", "Number of Calls");
-            out.format("%-20s", "Total Time");
+            out.format("%-40s", "Function Name");
+            out.format("%-20s", "Counter");
+            out.format("%-20s", "Excluded Time");
+            out.format("%-20s", "Cumulative Time");
             out.format("%-9s", "Line");
             out.format("%-11s", "Column");
             out.format("%-11s", "Length");
             out.println();
-            out.println("===============                              ===============     ===============     ====     ======     ======");
+            out.println("===============                         ===============     ===============     ===============     ====     ======     ======");
 
-            for (TimeProfilerInstrument instrument : callInstruments) {
-                if (instrument.getCounter() > 0) {
-                	Node node = instrument.getNode();
-                    out.format("%-45s", ((RubyRootNode)node.getRootNode()).getSharedMethodInfo());
-                    out.format("%15s", instrument.getCounter());
-                    out.format("%20s", (instrument.getTime() / 1000000000));
-                    out.format("%9s", node.getSourceSection().getStartLine());
-                    out.format("%11s", node.getSourceSection().getStartColumn());
-                    out.format("%11s", node.getSourceSection().getCharLength());
+            excludedTime = 0;
+
+            for (MethodBodyInstrument methodBodyInstrument : methodBodyInstruments) {
+                Node methodBody = methodBodyInstrument.getMethodBodyNode();
+                String methodName = ((RubyRootNode) methodBody.getRootNode()).getSharedMethodInfo().getName();
+                long[] results = getCumulativeCounterTime(methodBodyInstrument, callInstruments);
+                long totalCounter = results[0];
+                long cumulativeTime = results[1];
+
+                if (totalCounter > 0) {
+                    getExcludedTime(methodBody, methodBodyInstrument, cumulativeTime);
+                    out.format("%-40s", methodName);
+                    out.format("%15s", totalCounter);
+                    out.format("%20s", (excludedTime / 1000000000));
+                    out.format("%20s", (cumulativeTime / 1000000000));
+                    out.format("%9s", methodBody.getSourceSection().getStartLine());
+                    out.format("%11s", methodBody.getSourceSection().getStartColumn());
+                    out.format("%11s", methodBody.getSourceSection().getCharLength());
                     out.println();
-
-                    totalCount = totalCount + instrument.getCounter();
                 }
             }
-            
-			out.println("Total number of executed instruments: " + totalCount);
+            out.println("Total number of executed instruments: " + callInstruments.size());
         }
+    }
+
+    private long[] getCumulativeCounterTime(MethodBodyInstrument methodBodyInstrument,  List<TimeProfilerInstrument> callInstruments) {
+        long totalCounter = 0;
+        long cumulativeTime = 0;
+
+        for (TimeProfilerInstrument callInstrument : callInstruments) {
+            DispatchHeadNode callDispatchNode = ((RubyCallNode)callInstrument.getNode()).getDispatchHeadNode();
+            if (callDispatchNode.getNewDispatch() instanceof NewCachedDispatchNode) {
+                NewCachedDispatchNode newCachedDispatchNode = (NewCachedDispatchNode)callDispatchNode.getNewDispatch();
+                if (newCachedDispatchNode instanceof NewCachedBoxedDispatchNode) {
+                    NewCachedBoxedDispatchNode newCachedBoxedDispatchNode = (NewCachedBoxedDispatchNode)newCachedDispatchNode;
+                    RubyMethod method = newCachedBoxedDispatchNode.getRubyMethod();
+                    if (methodBodyInstrument.getRubyMethod() != null) {
+                        if (method.getSharedMethodInfo().equals(methodBodyInstrument.getRubyMethod().getSharedMethodInfo())){
+                            totalCounter = totalCounter + callInstrument.getCounter();
+                            cumulativeTime = cumulativeTime + callInstrument.getTime();
+                        }
+                    }
+                }
+            }
+        }
+
+        long[] returnValues = new long[2];
+        returnValues[0] = totalCounter;
+        returnValues[1] = cumulativeTime;
+        return returnValues;
+    }
+
+    public void getExcludedTime(Node methodBody, final MethodBodyInstrument methodBodyInstrument, long cumulativeTime) {
+      excludedTime = cumulativeTime;
+
+      methodBody.accept(new NodeVisitor() {
+          public boolean visit(Node node) {
+              if (node instanceof RubyCallNode) {
+                  if (node.getParent() instanceof RubyWrapper) {
+                      RubyWrapper callWrapper = (RubyWrapper) node.getParent();
+                      /**
+                       * foo(bar())
+                       * Do not exclude time spent in an argument to a call, i.e,  do not exclude bar() time since foo() time already includes the time spent in bar
+                       */
+                      if (!(callWrapper.getParent() instanceof RubyCallNode)) {
+                          Node callProbe = (Node) callWrapper.getProbe();
+                          InstrumentationNode instrumentationNode = (InstrumentationNode) (callProbe.getChildren().iterator().next());
+                          TimeProfilerInstrument subCallInstrument = null;
+
+                          while (instrumentationNode != null) {
+                              if (instrumentationNode instanceof TimeProfilerInstrument) {
+                                  subCallInstrument = (TimeProfilerInstrument) instrumentationNode;
+                              }
+
+                              instrumentationNode = (InstrumentationNode)(instrumentationNode.getChildren().iterator().next());
+                          }
+
+                          if (subCallInstrument != null) {
+                              DispatchHeadNode callDispatchNode = ((RubyCallNode)node).getDispatchHeadNode();
+                              if (callDispatchNode.getNewDispatch() instanceof NewCachedDispatchNode) {
+                                  NewCachedDispatchNode newCachedDispatchNode = (NewCachedDispatchNode)callDispatchNode.getNewDispatch();
+                                  if (newCachedDispatchNode instanceof NewCachedBoxedDispatchNode) {
+                                      NewCachedBoxedDispatchNode newCachedBoxedDispatchNode = (NewCachedBoxedDispatchNode)newCachedDispatchNode;
+                                      RubyMethod method = newCachedBoxedDispatchNode.getRubyMethod();
+                                      if (methodBodyInstrument.getRubyMethod() != null) {
+                                          if (!method.getSharedMethodInfo().equals(methodBodyInstrument.getRubyMethod().getSharedMethodInfo())){
+                                              /**
+                                               * Do not exclude recursive calls
+                                               */
+                                              excludedTime = excludedTime - subCallInstrument.getTime();
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          return true;
+          }
+      });
     }
 
     public void printControlFlowProfilerResults() {

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.debug.RubyNodeProber;
 import org.jruby.truffle.nodes.debug.RubyWrapper;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
 import com.oracle.truffle.api.instrument.StandardSyntaxTag;
@@ -16,6 +17,7 @@ import com.oracle.truffle.api.nodes.Node;
 
 public class ProfilerProber implements RubyNodeProber {
 
+    private List<MethodBodyInstrument> methodBodyInstruments;
     private List<TimeProfilerInstrument> callInstruments;
     private List<ProfilerInstrument> whileInstruments;
     private List<ProfilerInstrument> iteratorLoopInstruments;
@@ -27,6 +29,7 @@ public class ProfilerProber implements RubyNodeProber {
     private List<TypeDistributionProfilerInstrument> variableAccessTypeDistributionInstruments;
 
     public ProfilerProber() {
+        methodBodyInstruments = new ArrayList<>();
     	callInstruments = new ArrayList<>();
         whileInstruments = new ArrayList<>();
         iteratorLoopInstruments = new ArrayList<>();
@@ -46,6 +49,13 @@ public class ProfilerProber implements RubyNodeProber {
     @Override
     public RubyNode probeAsStatement(RubyNode node) {
         return null;
+    }
+
+    public RubyWrapper probeAsMethodBody(RubyNode node, RubyMethod rubyMethod) {
+        RubyWrapper wrapper = createWrapper(node);
+        MethodBodyInstrument profilerInstrument = createAttachMethodBodyInstrument(wrapper, rubyMethod);
+        methodBodyInstruments.add(profilerInstrument);
+        return wrapper;
     }
     
     public RubyWrapper probeAsCall(RubyNode node) {
@@ -170,6 +180,16 @@ public class ProfilerProber implements RubyNodeProber {
         TypeDistributionProfilerInstrument profilerInstrument = new TypeDistributionProfilerInstrument(wrapper.getChild());
         wrapper.getProbe().addInstrument(profilerInstrument);
         return profilerInstrument;
+    }
+
+    private static MethodBodyInstrument createAttachMethodBodyInstrument(RubyWrapper wrapper, RubyMethod rubyMethod) {
+        MethodBodyInstrument profilerInstrument = new MethodBodyInstrument(wrapper.getChild(), rubyMethod);
+        wrapper.getProbe().addInstrument(profilerInstrument);
+        return profilerInstrument;
+    }
+
+    public List<MethodBodyInstrument> getMethodBodyInstruments() {
+        return methodBodyInstruments;
     }
 
     public List<TimeProfilerInstrument> getCallInstruments() {

@@ -234,4 +234,13 @@ public class RubyCallNode extends RubyNode {
         return dispatchHead.getName();
     }
 
+    public DispatchHeadNode getDispatchHeadNode() {
+        return dispatchHead;
+    }
+
+    public ProcOrNullNode getBlock() {
+        return block;
+    }
+
+
 }

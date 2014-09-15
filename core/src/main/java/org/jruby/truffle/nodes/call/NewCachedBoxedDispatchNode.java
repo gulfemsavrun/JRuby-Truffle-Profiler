@@ -83,4 +83,9 @@ public abstract class NewCachedBoxedDispatchNode extends NewCachedDispatchNode {
     private Object doNext(VirtualFrame frame, Object methodReceiverObject, Object callingSelf, Object receiverObject, RubyProc blockObject, Object argumentsObjects) {
         return next.executeDispatch(frame, methodReceiverObject, callingSelf, receiverObject, blockObject, argumentsObjects);
     }
+
+    public RubyMethod getRubyMethod() {
+        return method;
+    }
+
 }

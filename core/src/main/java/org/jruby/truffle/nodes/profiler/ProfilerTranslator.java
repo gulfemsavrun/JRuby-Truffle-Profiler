@@ -1,9 +1,11 @@
 package org.jruby.truffle.nodes.profiler;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.control.BreakNode;
 import org.jruby.truffle.nodes.control.IfNode;
@@ -18,6 +20,7 @@ import org.jruby.truffle.nodes.methods.locals.WriteLevelVariableNode;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
 import com.oracle.truffle.api.nodes.Node;
@@ -27,19 +30,22 @@ import com.oracle.truffle.api.nodes.RootNode;
 public class ProfilerTranslator implements NodeVisitor {
 	
 	private final static ProfilerTranslator INSTANCE = new ProfilerTranslator();
-	
+
+	private RubyRootNode mainRootNode;
+	private final List<RubyRootNode> methodRootNodes;
     private final ProfilerProber profilerProber;
     private final ProfilerResultPrinter resultPrinter;    
     private final List<String> operators;
     private final List<String> collectionAccessOperators;
-    
-    private static boolean translatingModule = false;
+    private static RubyMethod currentRubyMethod = null;
+
     
     public static ProfilerTranslator getInstance() {
     	return INSTANCE;
     }
     
     private ProfilerTranslator() {
+        this.methodRootNodes = new ArrayList<>();
     	this.profilerProber = new ProfilerProber();
         this.resultPrinter = new ProfilerResultPrinter(this.profilerProber);
         
@@ -55,20 +61,27 @@ public class ProfilerTranslator implements NodeVisitor {
         collectionAccessOperators = Arrays.asList("[]", "[]=");
     }
 
-    public void translate(RootNode rootNode, boolean isModule) {
+    public void translate(RootNode rootNode, boolean isModule, boolean isBlock, RubyMethod rubyMethod) {
     	/**
     	 * Main module invocations are not profiled, only function invocations are profiled.
     	 */
-    	
-    	translatingModule = isModule;
+
+        currentRubyMethod = rubyMethod;
+
+        if (isModule) {
+            mainRootNode = (RubyRootNode)rootNode;
+        } else {
+            methodRootNodes.add((RubyRootNode)rootNode);
+        }
+
     	rootNode.accept(this);
-    	translatingModule = false;
+        currentRubyMethod = null;
     }
 
     @Override
     public boolean visit(Node node) {    	
-        if (!translatingModule && Options.TRUFFLE_PROFILE_CALLS.load()) {
-        	profileCalls(node);
+        if (Options.TRUFFLE_PROFILE_CALLS.load()) {
+            profileCalls(node);
         }
 
         if (Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()) {
@@ -90,9 +103,15 @@ public class ProfilerTranslator implements NodeVisitor {
         return true;
     }
     
-    private void profileCalls(Node node) {   
+    private void profileCalls(Node node) {
         if (node instanceof ExceptionTranslatingNode) {
-            createCallWrapper((RubyNode)node);
+            createMethodBodyWrapper((RubyNode)node);
+        } else if (node instanceof RubyCallNode) {
+            RubyCallNode callNode = (RubyCallNode) node;
+            String name = callNode.getName();
+            if (!operators.contains(name) && !collectionAccessOperators.contains(name)) {
+                createCallWrapper((RubyNode)node);
+            }
         }
     }
     
@@ -184,6 +203,12 @@ public class ProfilerTranslator implements NodeVisitor {
         }
     }
     
+    private RubyWrapper createMethodBodyWrapper(RubyNode node) {
+        RubyWrapper wrapperNode = profilerProber.probeAsMethodBody(node, currentRubyMethod);
+        replaceNodeWithWrapper(node, wrapperNode);
+        return wrapperNode;
+    }
+
     public RubyWrapper createCallWrapper(RubyNode node) {
     	RubyWrapper wrapperNode = profilerProber.probeAsCall(node);
         replaceNodeWithWrapper(node, wrapperNode);
@@ -251,6 +276,14 @@ public class ProfilerTranslator implements NodeVisitor {
 
     public ProfilerResultPrinter getProfilerResultPrinter() {
         return resultPrinter;
+    }
+
+    public RubyRootNode getMainRootNode() {
+        return mainRootNode;
+    }
+
+    public List<RubyRootNode> getMethodRootNodes() {
+        return methodRootNodes;
     }
 
 }

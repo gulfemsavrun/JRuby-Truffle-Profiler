@@ -117,7 +117,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load() || Options.TRUFFLE_PROFILE_OPERATIONS.load() 
                 || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
                 profilerTranslator = ProfilerTranslator.getInstance();
-                profilerTranslator.translate(parseResult.getRootNode(), true);
+                profilerTranslator.translate(parseResult.getRootNode(), true, false, null);
             }
 
             Object value = callTarget.call(RubyArguments.pack(null, parentFrame, self, null));

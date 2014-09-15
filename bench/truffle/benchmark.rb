@@ -124,10 +124,6 @@ benchmarks = [
   "richards-z",
 ]
 
-disable_splitting = [
-  "spectral-norm-z",
-]
-
 scores = {}
 
 folder_name = "benchmarks_zippy"
@@ -142,41 +138,35 @@ benchmarks.each do |benchmark|
       puts "run " + run.to_s
       puts "running " + benchmark
 
-      if disable_splitting.include? benchmark
-        splitting = "-J-G:-TruffleSplitting"
-      else
-        splitting = ""
-      end
-
       if jruby
         output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
       elsif profiler_jruby
         output = `../../bin/jruby -J-server -J-Xmx2G --profile #{benchmark_path}.rb`
       elsif simple_truffle
-        output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T #{benchmark_path}.rb`
+        output = `../../bin/jruby -J-server -J-Xmx2G -X+T #{benchmark_path}.rb`
       else
         if profile_sort
           profile_sort_flag = "-Xtruffle.profile.sort=true"
         end
 
         if profile_calls
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.calls=true #{profile_sort_flag} #{benchmark_path}.rb`
+          output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.calls=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
         if profile_control_flow
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
+          output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
         if profile_variable_accesses
           if profile_type_distribution
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true -Xtruffle.profile.type_distribution=true #{profile_sort_flag} #{benchmark_path}.rb`
+            output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.variable_accesses=true -Xtruffle.profile.type_distribution=true #{profile_sort_flag} #{benchmark_path}.rb`
           else
-            output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
+            output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.variable_accesses=true #{profile_sort_flag} #{benchmark_path}.rb`
           end
         end
         if profile_operations
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
+          output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.operations=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
         if profile_collection_operations
-          output = `../../bin/jruby -J-server -J-Xmx2G #{splitting} -X+T -Xtruffle.profile.collection_operations=true #{profile_sort_flag} #{benchmark_path}.rb`
+          output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.collection_operations=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
       end
 
