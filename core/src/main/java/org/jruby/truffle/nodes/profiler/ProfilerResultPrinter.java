@@ -58,6 +58,7 @@ public class ProfilerResultPrinter {
             out.println("===============                         ===============     ===============     ===============     ====     ======     ======");
 
             excludedTime = 0;
+            long totalCalls = 0;
 
             for (MethodBodyInstrument methodBodyInstrument : methodBodyInstruments) {
                 Node methodBody = methodBodyInstrument.getMethodBodyNode();
@@ -76,9 +77,10 @@ public class ProfilerResultPrinter {
                     out.format("%11s", methodBody.getSourceSection().getStartColumn());
                     out.format("%11s", methodBody.getSourceSection().getCharLength());
                     out.println();
+                    totalCalls = totalCalls + totalCounter;
                 }
             }
-            out.println("Total number of executed instruments: " + callInstruments.size());
+            out.println("Total number of executed calls: " + totalCalls);
         }
     }
 
