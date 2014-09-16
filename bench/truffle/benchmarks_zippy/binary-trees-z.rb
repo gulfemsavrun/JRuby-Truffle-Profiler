@@ -90,12 +90,12 @@ def warmup
 #    binary_trees(10)
 #  end
   
-  binary_trees(15)
+  binary_trees(16)
 end
 
 def sample
   #binary_trees(15) == -87308
-  binary_trees(19)
+  binary_trees(18)
 end
 
 def name
