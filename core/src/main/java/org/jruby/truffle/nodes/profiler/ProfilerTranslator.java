@@ -38,7 +38,8 @@ public class ProfilerTranslator implements NodeVisitor {
     private final List<String> operators;
     private final List<String> collectionAccessOperators;
     private final List<String> usedDefinedMethods;
-    private static RubyMethod currentRubyMethod = null;
+    private boolean isTranslatingBlock;
+    private RubyMethod currentRubyMethod = null;
     
     public static ProfilerTranslator getInstance() {
     	return INSTANCE;
@@ -71,6 +72,7 @@ public class ProfilerTranslator implements NodeVisitor {
     	 * Main module invocations are not profiled, only function invocations are profiled.
     	 */
 
+        isTranslatingBlock = isBlock;
         currentRubyMethod = rubyMethod;
 
         if (isModule) {
@@ -80,6 +82,7 @@ public class ProfilerTranslator implements NodeVisitor {
         }
 
     	rootNode.accept(this);
+        isTranslatingBlock = false;
         currentRubyMethod = null;
     }
 
@@ -114,7 +117,11 @@ public class ProfilerTranslator implements NodeVisitor {
         } else if (node instanceof RubyCallNode) {
             RubyCallNode callNode = (RubyCallNode) node;
             String name = callNode.getName();
-            if (callNode.getBlock() == null && usedDefinedMethods.contains(name)) {
+            if (isTranslatingBlock) {
+                if(!operators.contains(name) && !collectionAccessOperators.contains(name)) {
+                    createCallWrapper((RubyNode)node);
+                }
+            } else if (usedDefinedMethods.contains(name)) {
                 createCallWrapper((RubyNode)node);
             }
         }
