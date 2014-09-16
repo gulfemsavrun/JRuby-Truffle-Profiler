@@ -37,8 +37,8 @@ public class ProfilerTranslator implements NodeVisitor {
     private final ProfilerResultPrinter resultPrinter;    
     private final List<String> operators;
     private final List<String> collectionAccessOperators;
+    private final List<String> usedDefinedMethods;
     private static RubyMethod currentRubyMethod = null;
-
     
     public static ProfilerTranslator getInstance() {
     	return INSTANCE;
@@ -48,6 +48,7 @@ public class ProfilerTranslator implements NodeVisitor {
         this.methodRootNodes = new ArrayList<>();
     	this.profilerProber = new ProfilerProber();
         this.resultPrinter = new ProfilerResultPrinter(this.profilerProber);
+        this.usedDefinedMethods = new ArrayList<>();
         
         operators = Arrays.asList("+", "-", "*", "/", "%", "**", 
                                  "==", "!=", ">", "<", ">=", "<=", "<=>", "===", ".eq?", "equal?", 
@@ -59,6 +60,10 @@ public class ProfilerTranslator implements NodeVisitor {
          * a[0] = 40 -----------> RubyCallNode ("[]=") ----> Write into an array
          */
         collectionAccessOperators = Arrays.asList("[]", "[]=");
+    }
+
+    public void addUserDefinedMethod(String methodName) {
+        this.usedDefinedMethods.add(methodName);
     }
 
     public void translate(RootNode rootNode, boolean isModule, boolean isBlock, RubyMethod rubyMethod) {
@@ -109,7 +114,7 @@ public class ProfilerTranslator implements NodeVisitor {
         } else if (node instanceof RubyCallNode) {
             RubyCallNode callNode = (RubyCallNode) node;
             String name = callNode.getName();
-            if (!operators.contains(name) && !collectionAccessOperators.contains(name)) {
+            if (callNode.getBlock() == null && usedDefinedMethods.contains(name)) {
                 createCallWrapper((RubyNode)node);
             }
         }

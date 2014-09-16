@@ -195,6 +195,7 @@ class MethodTranslator extends BodyTranslator {
             }
             return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods, rootNode);
         } else {
+            ProfilerTranslator.getInstance().addUserDefinedMethod(methodName);
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, ignoreLocalVisiblity);
         }
     }
