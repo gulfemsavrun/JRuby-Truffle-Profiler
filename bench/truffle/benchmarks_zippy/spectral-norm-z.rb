@@ -82,11 +82,8 @@ end
 
 def warmup
   100000.times do
-    spectral_norm(5)
+      spectral_norm(5)
   end
-  
-  # zippy warmup could not be applied here because spectral_norm(5500) does not compile necessary functions
-  #spectral_norm(5500)
 end
 
 def sample

@@ -7,8 +7,10 @@
 # GNU Lesser General Public License version 2.1
 
 create_reference = false
+ruby = false
+ruby_profiler = false
 jruby = false
-profiler_jruby = false
+jruby_profiler = false
 simple_truffle = false
 number_of_runs = 1
 profile_calls = false
@@ -29,12 +31,18 @@ while not args.empty?
   case arg
   when "-create-reference"
     create_reference = true
+  when "-ruby"
+    puts "RUNNING RUBY"
+    ruby = true
+  when "-ruby-profiler"
+    puts "RUNNING RUBY PROFILER"
+    ruby_profiler = true
   when "-jruby"
-    puts "RUNNING SIMPLE JRUBY"
+    puts "RUNNING JRUBY"
     jruby = true   
-  when "-profiler-jruby"
+  when "-jruby-profiler"
     puts "RUNNING JRUBY PROFILER"
-    profiler_jruby = true     
+    jruby_profiler = true
   when "-number-of-runs"
     number_of_runs = args.shift.to_i
   when "-simple-truffle"
@@ -88,6 +96,7 @@ reference_scores = {}
 file = nil
 reference_file = nil
 overhead_file = nil
+overhead_time_file = nil
 
 if create_reference
   reference_file = File.open("benchmark.reference", "w")
@@ -102,8 +111,11 @@ elsif calculate_overhead
       reference_scores[key] = value.to_f
     end
   end
+
   overhead_file = File.open("benchmark.overhead",  "w")
   overhead_file.write("-number-of-runs #{number_of_runs}\n")
+  overhead_difference_file = File.open("benchmark.overhead_difference",  "w")
+  overhead_difference_file.write("-number-of-runs #{number_of_runs}\n")
 end
 
 file = File.open("benchmark.results", "w")
@@ -120,8 +132,8 @@ benchmarks = [
   "mandelbrot-z",
   "n-body-z",
   "pidigits-z",
-  "spectral-norm-z",
   "richards-z",
+  "spectral-norm-z"
 ]
 
 scores = {}
@@ -132,15 +144,20 @@ benchmarks.each do |benchmark|
   benchmark_path = folder_name + "/" + benchmark
   total_score = 0
   total_overhead = 0
+  total_difference = 0
 
   if number_of_runs > 0
     for run in 1..number_of_runs
       puts "run " + run.to_s
       puts "running " + benchmark
 
-      if jruby
+      if ruby
+        output = `ruby #{benchmark_path}.rb`
+      elsif ruby_profiler
+        output = `ruby -rprofile #{benchmark_path}.rb`
+      elsif jruby
         output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
-      elsif profiler_jruby
+      elsif jruby_profiler
         output = `../../bin/jruby -J-server -J-Xmx2G --profile #{benchmark_path}.rb`
       elsif simple_truffle
         output = `../../bin/jruby -J-server -J-Xmx2G -X+T #{benchmark_path}.rb`
@@ -178,44 +195,49 @@ benchmarks.each do |benchmark|
         puts output
       else
         score = score_match[1].to_f
-        puts benchmark + " " + score.to_s
+        puts benchmark + " " + score.round(2).to_s
         
         if calculate_overhead 
-          puts "reference_scores[benchmark] " + reference_scores[benchmark].to_s
+          puts "reference: " + reference_scores[benchmark].to_s
           difference = score - reference_scores[benchmark]
           overhead_percentage = difference / reference_scores[benchmark] * 100
-          puts "#{benchmark} overhead: #{overhead_percentage}%"
+          puts "#{benchmark}: #{overhead_percentage.round(2)}%"
+          overhead_file.write("#{benchmark} #{overhead_percentage.round(2)}\n")
+          overhead_difference_file.write("#{benchmark} #{difference.round(2)}\n")
 
-          overhead_file.write("#{benchmark} #{overhead_percentage}\n")
           if (overhead_percentage > 0)
             total_overhead = total_overhead + overhead_percentage
+            total_difference = total_difference + difference
           end
         else
           if (create_reference and number_of_runs == 1)
-            reference_file.write("#{benchmark} #{score}\n")
+            reference_file.write("#{benchmark} #{score.round(2)}\n")
           end
         end
 
-        file.write("#{benchmark} #{score}\n")
+        file.write("#{benchmark} #{score.round(2)}\n")
         total_score = total_score + score
       end
     end
 
     if (number_of_runs > 1)
       avg_score = total_score / number_of_runs
-      puts benchmark + " avg " + avg_score.to_s
+      puts benchmark + " avg: " + avg_score.round(2).to_s
 
       if create_reference
-        reference_file.write("#{benchmark} #{avg_score}\n")
+        reference_file.write("#{benchmark} #{avg_score.round(2)}\n")
       end
 
       if calculate_overhead
         avg_overhead_percentage = total_overhead / number_of_runs
-        puts benchmark + " avg overhead " + avg_overhead_percentage.to_s
-        overhead_file.write("avg: #{benchmark} #{avg_overhead_percentage}\n\n")
+        avg_difference = total_difference / number_of_runs
+        puts benchmark + " avg overhead: " + avg_overhead_percentage.round(2).to_s + "%"
+        overhead_file.write("avg: #{benchmark} #{avg_overhead_percentage.round(2)}\n\n")
+        puts benchmark + " avg difference: " + avg_difference.round(2).to_s
+        overhead_difference_file.write("avg: #{benchmark} #{avg_difference.round(2)}\n\n")
       end
 
-      file.write("avg: #{benchmark} #{avg_score}\n\n")
+      file.write("avg: #{benchmark} #{avg_score.round(2)}\n\n")
     end
   end
 end
