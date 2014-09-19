@@ -160,13 +160,15 @@ public class ProfilerResultPrinter {
     }
 
     public void printControlFlowProfilerResults() {
-        printWhileProfilerResults();
-        printIteratorLoopProfilerResults();
-        printIfProfilerResults();
-        printBreakNextProfilerResults();
+        long totalCount = 0;
+        totalCount += printWhileProfilerResults();
+        totalCount += printIteratorLoopProfilerResults();
+        totalCount += printIfProfilerResults();
+        totalCount += printBreakNextProfilerResults();
+        out.println("Total number of executed control flow instruments: " + totalCount);
     }
     
-    private void printWhileProfilerResults() {        
+    private long printWhileProfilerResults() {
         long totalCount = 0;
         List<ProfilerInstrument> whileInstruments = getInstruments(profilerProber.getWhileInstruments());   
         
@@ -185,9 +187,11 @@ public class ProfilerResultPrinter {
 
             out.println("Total number of executed instruments: " + totalCount);
         }
+
+        return totalCount;
     }
 
-    private void printIteratorLoopProfilerResults() {
+    private long printIteratorLoopProfilerResults() {
         long totalCount = 0;
         List<ProfilerInstrument> iteratorLoopInstruments = getInstruments(profilerProber.getIteratorLoopInstruments()); 
 
@@ -210,9 +214,11 @@ public class ProfilerResultPrinter {
 
             out.println("Total number of executed instruments: " + totalCount);
         }
+
+        return totalCount;
     }
     
-    public void printIfProfilerResults() {
+    public long printIfProfilerResults() {
         long totalCount = 0;
         Map<ProfilerInstrument, List<ProfilerInstrument>> ifInstruments;
         if (Options.TRUFFLE_PROFILE_SORT.load()) {
@@ -265,9 +271,11 @@ public class ProfilerResultPrinter {
 
             out.println("Total number of executed instruments: " + totalCount);
         }
+
+        return totalCount;
     }
 
-    public void printBreakNextProfilerResults() {
+    public long printBreakNextProfilerResults() {
 	    long totalCount = 0;
 	    List<ProfilerInstrument> breakNextInstruments = getInstruments(profilerProber.getBreakNextInstruments());   
 
@@ -285,6 +293,8 @@ public class ProfilerResultPrinter {
 	
 	        out.println("Total number of executed instruments: " + totalCount);
 	    }
+
+        return totalCount;
     }
     
     public void printVariableAccessProfilerResults() {
@@ -482,13 +492,13 @@ public class ProfilerResultPrinter {
         // CheckStyle: stop system..print check
         int bannerSize = size - caption.length() - 2;
         for (int i = 0; i < bannerSize / 2; i++) {
-            out.println();
+            out.print("=");
         }
 
-        System.err.print(" " + caption + " ");
+        out.print(" " + caption + " ");
 
         for (int i = 0; i < (bannerSize - (bannerSize / 2)); i++) {
-            out.println();
+            out.print("=");
         }
 
         out.println();
