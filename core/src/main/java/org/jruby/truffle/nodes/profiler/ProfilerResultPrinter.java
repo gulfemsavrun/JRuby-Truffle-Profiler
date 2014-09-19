@@ -27,7 +27,6 @@ import com.oracle.truffle.api.nodes.NodeVisitor;
 public class ProfilerResultPrinter {
 
     private PrintStream out = System.err;
-
     private final ProfilerProber profilerProber;
 
     public ProfilerResultPrinter(ProfilerProber profilerProber) {
@@ -41,7 +40,7 @@ public class ProfilerResultPrinter {
         List<TimeProfilerInstrument> callInstruments = profilerProber.getCallInstruments();
 
         if (methodBodyInstruments.size() > 0) {
-            printBanner("Call Time Profiling Results", 72);
+            printBanner("Call Time Profiling Results", 116);
             /**
              * 50 is the length of the text by default padding left padding is added, so space is
              * added to the beginning of the string, minus sign adds padding to the right
@@ -53,9 +52,8 @@ public class ProfilerResultPrinter {
             out.format("%-20s", "Cumulative Time");
             out.format("%-9s", "Line");
             out.format("%-11s", "Column");
-            out.format("%-11s", "Length");
             out.println();
-            out.println("===============                         ===============     ===============     ===============     ====     ======     ======");
+            out.println("===============                         ===============     ===============     ===============     ====     ======");
 
             excludedTime = 0;
             long totalCalls = 0;
@@ -75,7 +73,6 @@ public class ProfilerResultPrinter {
                     out.format("%20s", (cumulativeTime / 1000000000));
                     out.format("%9s", methodBody.getSourceSection().getStartLine());
                     out.format("%11s", methodBody.getSourceSection().getStartColumn());
-                    out.format("%11s", methodBody.getSourceSection().getCharLength());
                     out.println();
                     totalCalls = totalCalls + totalCounter;
                 }
@@ -205,7 +202,6 @@ public class ProfilerResultPrinter {
                     totalCount = totalCount + instrument.getCounter();
                     out.format("%9s", node.getSourceSection().getStartLine());
                     out.format("%11s", node.getSourceSection().getStartColumn());
-                    out.format("%11s", node.getSourceSection().getCharLength());
                     out.format("%5s", "");
                     out.format("%-70s", node.getRootNode());
                     out.println();
@@ -226,17 +222,16 @@ public class ProfilerResultPrinter {
         }
 
         if (ifInstruments.size() > 0) {
-            printBanner("If Node Profiling Results", 120);
+            printBanner("If Node Profiling Results", 116);
             out.format("%-20s", "If Counter");
             out.format("%15s", "Then Counter");
             out.format("%20s", "Else Counter");
             out.format("%9s", "Line");
             out.format("%11s", "Column");
-            out.format("%11s", "Length");
             out.format("%5s", "");
             out.format("%-70s", "In Method");
             out.println();
-            out.println("===========            ============        ============     ====     ======     ======     ========================================================");
+            out.println("===========         ============      =============     ====     ======     ========================================");
 
             Iterator<Map.Entry<ProfilerInstrument, List<ProfilerInstrument>>> it = ifInstruments.entrySet().iterator();
             while (it.hasNext()) {
@@ -262,7 +257,6 @@ public class ProfilerResultPrinter {
                     Node ifNode = ifInstrument.getNode();
                     out.format("%9s", ifNode.getSourceSection().getStartLine());
                     out.format("%11s", ifNode.getSourceSection().getStartColumn());
-                    out.format("%11s", ifNode.getSourceSection().getCharLength());
                     out.format("%5s", "");
                     out.format("%-70s", ifNode.getRootNode());
                     out.println();
@@ -305,10 +299,9 @@ public class ProfilerResultPrinter {
                 out.format("%-20s", "Counter");
                 out.format("%-9s", "Line");
                 out.format("%-11s", "Column");
-                out.format("%-11s", "Length");
                 out.format("%-70s", "In Method");
                 out.println();
-                out.println("=============                                     ===============     ====     ======     ======     =======================================================");
+                out.println("=============                                     ===============     ====     ======     ==================================================");
   
                 for (TypeDistributionProfilerInstrument profilerInstrument : variableAccessInstruments) {
                     Map<Class<? extends Node>, Counter> types = profilerInstrument.getTypes();
@@ -322,7 +315,6 @@ public class ProfilerResultPrinter {
                         out.format("%15s", counter);
                         out.format("%9s", initialNode.getSourceSection().getStartLine());
                         out.format("%11s", initialNode.getSourceSection().getStartColumn());
-                        out.format("%11s", initialNode.getSourceSection().getCharLength());
                         out.format("%5s", "");
                         out.format("%-70s", initialNode.getRootNode());
                         out.println();
@@ -340,7 +332,6 @@ public class ProfilerResultPrinter {
                             out.format("%15s", counter);
                             out.format("%9s", initialNode.getSourceSection().getStartLine());
                             out.format("%11s", initialNode.getSourceSection().getStartColumn());
-                            out.format("%11s", initialNode.getSourceSection().getCharLength());
                             out.format("%5s", "");
                             out.format("%-70s", initialNode.getRootNode());
                             out.println();
@@ -412,15 +403,14 @@ public class ProfilerResultPrinter {
     }
     
     private void printCaption(String caption) {
-        printBanner(caption, 110);
+        printBanner(caption, 116);
         out.format("%-25s", "Node");
         out.format("%-20s", "Counter");
         out.format("%-9s", "Line");
         out.format("%-11s", "Column");
-        out.format("%-11s", "Length");
         out.format("%-70s", "In Method");
         out.println();
-        out.println("=============            ===============     ====     ======     ======     =======================================================");
+        out.println("=============            ===============     ====     ======     ===================================================");
     }
 
     private void printProfilerResult(String nodeName, Node node, long counter) {
@@ -488,19 +478,20 @@ public class ProfilerResultPrinter {
 
     }
     
-    private static void printBanner(String caption, int size) {
+    private void printBanner(String caption, int size) {
         // CheckStyle: stop system..print check
-        for (int i = 0; i < size / 2; i++) {
-            System.err.print("=");
+        int bannerSize = size - caption.length() - 2;
+        for (int i = 0; i < bannerSize / 2; i++) {
+            out.println();
         }
 
         System.err.print(" " + caption + " ");
 
-        for (int i = 0; i < size / 2; i++) {
-            System.err.print("=");
+        for (int i = 0; i < (bannerSize - (bannerSize / 2)); i++) {
+            out.println();
         }
 
-        System.err.println();
+        out.println();
         // CheckStyle: resume system..print check
     }
 }
