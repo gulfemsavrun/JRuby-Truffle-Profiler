@@ -100,6 +100,22 @@ public class ProfilerProber implements RubyNodeProber {
         return wrappers;
     }
 
+    public List<RubyWrapper> probeAsIfWithoutThen(RubyNode ifNode, RubyNode elseNode) {
+        List<RubyWrapper> wrappers = new ArrayList<>();
+        RubyWrapper ifWrapper = createWrapper(ifNode);
+        RubyWrapper elseWrapper = createWrapper(elseNode);
+        wrappers.add(ifWrapper);
+        wrappers.add(elseWrapper);
+
+        List<ProfilerInstrument> instruments = new ArrayList<>();
+        ProfilerInstrument ifInstrument = createAttachProfilerInstrument(ifWrapper);
+        ProfilerInstrument thenInstrument = createAttachProfilerInstrument(elseWrapper);
+        instruments.add(thenInstrument);
+        ifInstruments.put(ifInstrument, instruments);
+
+        return wrappers;
+    }
+
     public List<RubyWrapper> probeAsIfWithoutElse(RubyNode ifNode, RubyNode thenNode) {
         List<RubyWrapper> wrappers = new ArrayList<>();
         RubyWrapper ifWrapper = createWrapper(ifNode);

@@ -91,6 +91,7 @@ def warmup
 #  end
   
   binary_trees(16)
+  #binary_trees(4)
 end
 
 def sample

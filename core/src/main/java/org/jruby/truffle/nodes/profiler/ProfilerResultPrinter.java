@@ -15,7 +15,9 @@ import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.call.NewCachedBoxedDispatchNode;
 import org.jruby.truffle.nodes.call.NewCachedDispatchNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
+import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.debug.RubyWrapper;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.Options;
 
@@ -196,7 +198,15 @@ public class ProfilerResultPrinter {
         List<ProfilerInstrument> iteratorLoopInstruments = getInstruments(profilerProber.getIteratorLoopInstruments()); 
 
         if (iteratorLoopInstruments.size() > 0) {
-            printCaption("Iterator Loop Profiling Results");
+            printBanner("Iterator Loop Profiling Results", 116);
+
+            out.format("%-50s", "Node");
+            out.format("%-20s", "Counter");
+            out.format("%-9s", "Line");
+            out.format("%-11s", "Column");
+            out.format("%-70s", "In Method");
+            out.println();
+            out.println("=============                                     ===============     ====     ======     ============================");
 
             for (ProfilerInstrument instrument : iteratorLoopInstruments) {
                 if (instrument.getCounter() > 0) {
@@ -230,11 +240,10 @@ public class ProfilerResultPrinter {
         if (ifInstruments.size() > 0) {
             printBanner("If Node Profiling Results", 116);
             out.format("%-20s", "If Counter");
-            out.format("%15s", "Then Counter");
-            out.format("%20s", "Else Counter");
-            out.format("%9s", "Line");
-            out.format("%11s", "Column");
-            out.format("%5s", "");
+            out.format("%-18s", "Then Counter");
+            out.format("%-18s", "Else Counter");
+            out.format("%-9s", "Line");
+            out.format("%-11s", "Column");
             out.format("%-70s", "In Method");
             out.println();
             out.println("===========         ============      =============     ====     ======     ========================================");
@@ -245,22 +254,33 @@ public class ProfilerResultPrinter {
                 ProfilerInstrument ifInstrument = entry.getKey();
                 if (ifInstrument.getCounter() > 0) {
                     List<ProfilerInstrument> instruments = entry.getValue();
-                    ProfilerInstrument thenInstrument = instruments.get(0);
                     out.format("%11s", ifInstrument.getCounter());
-                    out.format("%24s", thenInstrument.getCounter());
 
+                    IfNode ifNode = (IfNode)ifInstrument.getNode();
                     totalCount = totalCount + ifInstrument.getCounter();
-                    totalCount = totalCount + thenInstrument.getCounter();
 
-                    if (instruments.size() == 1) {
-                        out.format("%20s", "-");
-                    } else if (instruments.size() == 2) {
-                        ProfilerInstrument elseInstrument = instruments.get(1);
-                        out.format("%20s", elseInstrument.getCounter());
-                        totalCount = totalCount + elseInstrument.getCounter();
+                    if (ifNode.getThen() instanceof NilLiteralNode) {
+                        out.format("%21s", "-");
+                    } else {
+                        ProfilerInstrument thenInstrument = instruments.get(0);
+                        out.format("%21s", thenInstrument.getCounter());
+                        totalCount = totalCount + thenInstrument.getCounter();
                     }
 
-                    Node ifNode = ifInstrument.getNode();
+                    if (ifNode.getElse() instanceof NilLiteralNode) {
+                        out.format("%19s", "-");
+                    } else {
+                        if (instruments.size() == 1) {
+                            ProfilerInstrument elseInstrument = instruments.get(0);
+                            out.format("%19s", elseInstrument.getCounter());
+                            totalCount = totalCount + elseInstrument.getCounter();
+                        } else if (instruments.size() == 2) {
+                            ProfilerInstrument elseInstrument = instruments.get(1);
+                            out.format("%19s", elseInstrument.getCounter());
+                            totalCount = totalCount + elseInstrument.getCounter();
+                        }
+                    }
+
                     out.format("%9s", ifNode.getSourceSection().getStartLine());
                     out.format("%11s", ifNode.getSourceSection().getStartColumn());
                     out.format("%5s", "");

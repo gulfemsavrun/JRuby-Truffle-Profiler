@@ -202,7 +202,7 @@ benchmarks.each do |benchmark|
           difference = score - reference_scores[benchmark]
           overhead_percentage = difference / reference_scores[benchmark] * 100
           puts "#{benchmark} overhead: #{overhead_percentage.round(2)}%"
-          puts "#{benchmark} difference: #{difference.round(2)}%"
+          puts "#{benchmark} difference: #{difference.round(2)}"
           overhead_file.write("#{benchmark} #{overhead_percentage.round(2)}\n")
           overhead_difference_file.write("#{benchmark} #{difference.round(2)}\n")
 

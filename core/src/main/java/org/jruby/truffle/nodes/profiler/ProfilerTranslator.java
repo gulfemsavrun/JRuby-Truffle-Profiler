@@ -10,6 +10,7 @@ import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.control.BreakNode;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.NextNode;
+import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.debug.RubyWrapper;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
@@ -144,29 +145,50 @@ public class ProfilerTranslator implements NodeVisitor {
     private void profileIfs(Node node) {
         if (node instanceof IfNode) {
             IfNode ifNode = (IfNode) node;
-            RubyNode thenNode = ifNode.getThen();
-            RubyNode elseNode = ifNode.getElse();
+            /**
+             * Iterators create extra if node, so don't wrap this if node in iterators
+             * (1..10).each do |i|
+             *     x = 10
+             * end
+             * AST of an iterator loop
+             * body = SequenceNode
+             * body[0] = IfNode
+             * condition = BooleanCastBooleanNode
+             *    child = BehaveAsBlockNode
+             * thenBody = NilLiteralNode
+             * elseBody = CheckArityNode
+             * body[1] = WriteLocalVariableIntNode
+             *   rhs = ReadPreArgumentNode
+             * body[2] = RubyWrapper
+             * child = WriteLocalVariableIntNode
+             *  rhs = IntegerFixnumLiteralNode
+             * body[3] = RubyWrapper
+             * child = RubyCallNode
+             * receiver = SelfNode
+            **/
 
-            /**
-             * TODO
-             * When if modifier is used as "code if condition", then the source section of the following three points to code
-             * - if nodes
-             * - then body 
-             * - else body
-             * Therefore, this special case is not currently profiled. 
-             */
-            
-            if (ifNode.getSourceSection().equals(thenNode.getSourceSection())) {
-            	return;
-            }
-            
-            /**
-             * Only create a wrapper node if an else part exists.
-             */
-            if (elseNode instanceof NilLiteralNode) {
-                createIfWithoutElseWrappers(ifNode, thenNode);
-            } else {
-                createIfWrappers(ifNode, thenNode, elseNode);
+            if (!(isTranslatingBlock && ifNode.getParent() instanceof SequenceNode)) {
+                RubyNode thenNode = ifNode.getThen();
+                RubyNode elseNode = ifNode.getElse();
+
+                /**
+                 * Unless statement is translated into an if node
+                 * thenNode of such an if node is null
+                 * Only create a wrapper node if then part exists.
+                 */
+                if (thenNode instanceof NilLiteralNode) {
+                    createIfWithoutThenWrappers(ifNode, elseNode);
+                    return;
+                }
+
+                /**
+                 * Only create a wrapper node if an else part exists.
+                 */
+                if (elseNode instanceof NilLiteralNode) {
+                    createIfWithoutElseWrappers(ifNode, thenNode);
+                } else {
+                    createIfWrappers(ifNode, thenNode, elseNode);
+                }
             }
         }
     }
@@ -238,6 +260,12 @@ public class ProfilerTranslator implements NodeVisitor {
         replaceNodeWithWrapper(ifNode, wrappers.get(0));
         replaceNodeWithWrapper(thenNode, wrappers.get(1));
         replaceNodeWithWrapper(elseNode, wrappers.get(2));
+    }
+
+    private void createIfWithoutThenWrappers(RubyNode ifNode, RubyNode elseNode) {
+        List<RubyWrapper> wrappers = profilerProber.probeAsIfWithoutThen(ifNode, elseNode);
+        replaceNodeWithWrapper(ifNode, wrappers.get(0));
+        replaceNodeWithWrapper(elseNode, wrappers.get(1));
     }
 
     private void createIfWithoutElseWrappers(RubyNode ifNode, RubyNode thenNode) {
