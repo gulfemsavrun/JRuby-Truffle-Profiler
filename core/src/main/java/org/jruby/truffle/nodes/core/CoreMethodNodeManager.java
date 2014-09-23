@@ -164,7 +164,7 @@ public abstract class CoreMethodNodeManager {
         if (Options.TRUFFLE_PROFILE_BUILTIN_CALLS.load()) {
             Source source = null;
             try {
-                source = Source.fromFileName("/Users/gsy/Projects/JRuby-Truffle-Profiler/bench/truffle/builtins.rb");
+                source = Source.fromFileName("builtins.rb");
             } catch (IOException e) {
                 e.printStackTrace();
             }
