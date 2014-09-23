@@ -17,6 +17,8 @@ import com.oracle.truffle.api.nodes.Node;
 
 public class ProfilerProber implements RubyNodeProber {
 
+    private final static ProfilerProber INSTANCE = new ProfilerProber();
+
     private List<MethodBodyInstrument> methodBodyInstruments;
     private List<TimeProfilerInstrument> callInstruments;
     private List<ProfilerInstrument> whileInstruments;
@@ -28,7 +30,7 @@ public class ProfilerProber implements RubyNodeProber {
     private Map<ProfilerInstrument, List<ProfilerInstrument>> ifInstruments;
     private List<TypeDistributionProfilerInstrument> variableAccessTypeDistributionInstruments;
 
-    public ProfilerProber() {
+    private ProfilerProber() {
         methodBodyInstruments = new ArrayList<>();
     	callInstruments = new ArrayList<>();
         whileInstruments = new ArrayList<>();
@@ -39,6 +41,10 @@ public class ProfilerProber implements RubyNodeProber {
         collectionOperationInstruments = new ArrayList<>();
         ifInstruments = new LinkedHashMap<>();
         variableAccessTypeDistributionInstruments = new ArrayList<>();
+    }
+
+    public static ProfilerProber getInstance() {
+        return INSTANCE;
     }
     
     @Override

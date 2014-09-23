@@ -140,6 +140,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
     public static final Option<Integer> TRUFFLE_DISPATCH_MEGAMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.megamorphic.max", 255, "Maximum size of a megamorphic call site cache.");
     public static final Option<Boolean> TRUFFLE_PROFILE_CALLS = bool(TRUFFLE, "truffle.profile.calls", false, "Profile function invocations.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_BUILTIN_CALLS = bool(TRUFFLE, "truffle.profile.builtin_calls", false, "Profile built in function invocations.");
     public static final Option<Boolean> TRUFFLE_PROFILE_CONTROL_FLOW = bool(TRUFFLE, "truffle.profile.control_flow", false, "Profile control flow.");
     public static final Option<Boolean> TRUFFLE_PROFILE_VARIABLE_ACCESSES = bool(TRUFFLE, "truffle.profile.variable_accesses", false, "Profile variable accesses.");
     public static final Option<Boolean> TRUFFLE_PROFILE_OPERATIONS = bool(TRUFFLE, "truffle.profile.operations", false, "Profile operation nodes.");

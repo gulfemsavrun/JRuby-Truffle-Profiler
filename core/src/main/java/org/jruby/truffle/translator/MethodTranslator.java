@@ -189,8 +189,11 @@ class MethodTranslator extends BodyTranslator {
             /**
              * Profile the nodes inside block
              */
-            if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load() || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load()
-            || Options.TRUFFLE_PROFILE_OPERATIONS.load() || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
+            if (Options.TRUFFLE_PROFILE_CALLS.load()
+            || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()
+            || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load()
+            || Options.TRUFFLE_PROFILE_OPERATIONS.load()
+            || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
                 ProfilerTranslator.getInstance().translate(rootNode, false, true, null);
             }
             return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods, rootNode);

@@ -48,7 +48,7 @@ public class ProfilerTranslator implements NodeVisitor {
     
     private ProfilerTranslator() {
         this.methodRootNodes = new ArrayList<>();
-    	this.profilerProber = new ProfilerProber();
+        this.profilerProber = ProfilerProber.getInstance();
         this.resultPrinter = new ProfilerResultPrinter(this.profilerProber);
         this.usedDefinedMethods = new ArrayList<>();
         
@@ -118,13 +118,16 @@ public class ProfilerTranslator implements NodeVisitor {
         } else if (node instanceof RubyCallNode) {
             RubyCallNode callNode = (RubyCallNode) node;
             String name = callNode.getName();
-            if (isTranslatingBlock) {
-                if(!operators.contains(name) && !collectionAccessOperators.contains(name)) {
-                    createCallWrapper((RubyNode)node);
-                }
-            } else if (usedDefinedMethods.contains(name)) {
-                createCallWrapper((RubyNode)node);
-            }
+//            if (isTranslatingBlock) {
+//                if(!operators.contains(name) && !collectionAccessOperators.contains(name)) {
+//                    createCallWrapper((RubyNode)node);
+//                }
+//            } else if (usedDefinedMethods.contains(name)) {
+//                createCallWrapper((RubyNode)node);
+//            }
+
+            createCallWrapper((RubyNode)node);
+
         }
     }
     

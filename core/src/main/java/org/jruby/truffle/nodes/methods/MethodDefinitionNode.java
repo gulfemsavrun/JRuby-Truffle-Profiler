@@ -93,8 +93,10 @@ public class MethodDefinitionNode extends RubyNode {
         /**
          * When a profiler related option is enabled, {@link ProfilerTranslator} traverses the method to create {@link RubyWrapper} wrapper nodes.
          */
-        if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load() 
-                || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load() || Options.TRUFFLE_PROFILE_OPERATIONS.load() 
+        if (Options.TRUFFLE_PROFILE_CALLS.load()
+                || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()
+                || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load()
+                || Options.TRUFFLE_PROFILE_OPERATIONS.load()
                 || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
             ProfilerTranslator profilerTranslator = ProfilerTranslator.getInstance();
             profilerTranslator.translate(rootNodeClone, false, false, rubyMethod);

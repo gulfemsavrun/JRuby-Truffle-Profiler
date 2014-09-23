@@ -14,6 +14,7 @@ jruby_profiler = false
 simple_truffle = false
 number_of_runs = 1
 profile_calls = false
+profile_calls_builtins = false
 profile_control_flow = false
 profile_variable_accesses = false
 profile_operations = false
@@ -51,6 +52,9 @@ while not args.empty?
   when "-profile-calls"
     puts "PROFILING CALLS"
     profile_calls = true
+  when "-profile-calls-builtins"
+    puts "PROFILING CALLS AND BUILTINS"
+    profile_calls_builtins = true
   when "-profile-control-flow"
     puts "PROFILING CONTROL FLOW"
     profile_control_flow = true
@@ -154,7 +158,10 @@ benchmarks.each do |benchmark|
       if ruby
         output = `ruby #{benchmark_path}.rb`
       elsif ruby_profiler
-        output = `ruby -rprofile #{benchmark_path}.rb`
+        #output = `ruby -rprofile #{benchmark_path}.rb`
+        output = `ruby-prof #{benchmark_path}.rb`
+        # Use puts to print the output of the ruby-prof profiler
+        puts output
       elsif jruby
         output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
       elsif jruby_profiler
@@ -168,6 +175,9 @@ benchmarks.each do |benchmark|
 
         if profile_calls
           output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.calls=true #{profile_sort_flag} #{benchmark_path}.rb`
+        end
+        if profile_calls_builtins
+          output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.calls=true -Xtruffle.profile.builtin_calls=true #{profile_sort_flag} #{benchmark_path}.rb`
         end
         if profile_control_flow
           output = `../../bin/jruby -J-server -J-Xmx2G -X+T -Xtruffle.profile.control_flow=true #{profile_sort_flag} #{benchmark_path}.rb`
@@ -195,7 +205,7 @@ benchmarks.each do |benchmark|
         puts output
       else
         score = score_match[1].to_f
-        puts benchmark + " " + score.round(2).to_s
+        puts benchmark + ": " + score.round(2).to_s
         
         if calculate_overhead 
           puts "reference: " + reference_scores[benchmark].to_s

@@ -14,6 +14,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.call.NewCachedBoxedDispatchNode;
 import org.jruby.truffle.nodes.call.NewCachedDispatchNode;
+import org.jruby.truffle.nodes.call.NewCachedUnboxedDispatchNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.debug.RubyWrapper;
@@ -63,7 +64,7 @@ public class ProfilerResultPrinter {
             for (MethodBodyInstrument methodBodyInstrument : methodBodyInstruments) {
                 Node methodBody = methodBodyInstrument.getMethodBodyNode();
                 String methodName = ((RubyRootNode) methodBody.getRootNode()).getSharedMethodInfo().getName();
-                long[] results = getCumulativeCounterTime(methodBodyInstrument, callInstruments);
+                long[] results = getCumulativeCounterTime(methodName, methodBodyInstrument, callInstruments);
                 long totalCounter = results[0];
                 long cumulativeTime = results[1];
 
@@ -83,19 +84,26 @@ public class ProfilerResultPrinter {
         }
     }
 
-    private long[] getCumulativeCounterTime(MethodBodyInstrument methodBodyInstrument,  List<TimeProfilerInstrument> callInstruments) {
+    private long[] getCumulativeCounterTime(String methodName, MethodBodyInstrument methodBodyInstrument,  List<TimeProfilerInstrument> callInstruments) {
         long totalCounter = 0;
         long cumulativeTime = 0;
 
         for (TimeProfilerInstrument callInstrument : callInstruments) {
             DispatchHeadNode callDispatchNode = ((RubyCallNode)callInstrument.getNode()).getDispatchHeadNode();
             if (callDispatchNode.getNewDispatch() instanceof NewCachedDispatchNode) {
+                RubyMethod method = null;
                 NewCachedDispatchNode newCachedDispatchNode = (NewCachedDispatchNode)callDispatchNode.getNewDispatch();
                 if (newCachedDispatchNode instanceof NewCachedBoxedDispatchNode) {
                     NewCachedBoxedDispatchNode newCachedBoxedDispatchNode = (NewCachedBoxedDispatchNode)newCachedDispatchNode;
-                    RubyMethod method = newCachedBoxedDispatchNode.getRubyMethod();
+                    method = newCachedBoxedDispatchNode.getRubyMethod();
+                } else if (newCachedDispatchNode instanceof NewCachedUnboxedDispatchNode) {
+                    NewCachedUnboxedDispatchNode newCachedUnboxedDispatchNode = (NewCachedUnboxedDispatchNode)newCachedDispatchNode;
+                    method = newCachedUnboxedDispatchNode.getRubyMethod();
+                }
+
+                if (method != null) {
                     if (methodBodyInstrument.getRubyMethod() != null) {
-                        if (method.getSharedMethodInfo().equals(methodBodyInstrument.getRubyMethod().getSharedMethodInfo())){
+                        if (method.getSharedMethodInfo().equals(methodBodyInstrument.getRubyMethod().getSharedMethodInfo())) {
                             totalCounter = totalCounter + callInstrument.getCounter();
                             cumulativeTime = cumulativeTime + callInstrument.getTime();
                         }
@@ -206,7 +214,7 @@ public class ProfilerResultPrinter {
             out.format("%-11s", "Column");
             out.format("%-70s", "In Method");
             out.println();
-            out.println("=============                                     ===============     ====     ======     ============================");
+            out.println("=============                                     ===============     ====     ======     ==========================");
 
             for (ProfilerInstrument instrument : iteratorLoopInstruments) {
                 if (instrument.getCounter() > 0) {
