@@ -74,8 +74,13 @@ public class ProfilerResultPrinter {
                     out.format("%15s", totalCounter);
                     out.format("%20s", (excludedTime / 1000000000));
                     out.format("%20s", (cumulativeTime / 1000000000));
-                    out.format("%9s", methodBody.getSourceSection().getStartLine());
-                    out.format("%11s", methodBody.getSourceSection().getStartColumn());
+                    if (methodBody.getSourceSection().getSource().getShortName().equals("builtins.rb")) {
+                        out.format("%9s", "-");
+                        out.format("%11s", "-");
+                    } else {
+                        out.format("%9s", methodBody.getSourceSection().getStartLine());
+                        out.format("%11s", methodBody.getSourceSection().getStartColumn());
+                    }
                     out.println();
                     totalCalls = totalCalls + totalCounter;
                 }
