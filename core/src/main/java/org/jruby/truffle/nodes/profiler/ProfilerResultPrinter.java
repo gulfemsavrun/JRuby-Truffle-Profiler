@@ -1,8 +1,10 @@
 package org.jruby.truffle.nodes.profiler;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -36,11 +38,12 @@ public class ProfilerResultPrinter {
         this.profilerProber = profilerProber;
     }
 
-    static long excludedTime = 0;
+    static long selfTime = 0;
 
     public void printCallProfilerResults() {
         List<MethodBodyInstrument> methodBodyInstruments = profilerProber.getMethodBodyInstruments();
         List<TimeProfilerInstrument> callInstruments = profilerProber.getCallInstruments();
+        Map<MethodBodyInstrument, List<Long>> timeMap = new HashMap<>();
 
         if (methodBodyInstruments.size() > 0) {
             printBanner("Call Time Profiling Results", 116);
@@ -51,45 +54,37 @@ public class ProfilerResultPrinter {
 
             out.format("%-40s", "Function Name");
             out.format("%-20s", "Counter");
-            out.format("%-20s", "Excluded Time");
-            out.format("%-20s", "Cumulative Time");
+            out.format("%-20s", "Total Time");
+            out.format("%-20s", "Self Time");
             out.format("%-9s", "Line");
             out.format("%-11s", "Column");
             out.println();
             out.println("===============                         ===============     ===============     ===============     ====     ======");
 
-            excludedTime = 0;
-            long totalCalls = 0;
+            selfTime = 0;
 
             for (MethodBodyInstrument methodBodyInstrument : methodBodyInstruments) {
                 Node methodBody = methodBodyInstrument.getMethodBodyNode();
                 String methodName = ((RubyRootNode) methodBody.getRootNode()).getSharedMethodInfo().getName();
-                long[] results = getCumulativeCounterTime(methodName, methodBodyInstrument, callInstruments);
+                long[] results = getTotalCounterTime(methodName, methodBodyInstrument, callInstruments);
                 long totalCounter = results[0];
-                long cumulativeTime = results[1];
+                long totalTime = results[1];
 
                 if (totalCounter > 0) {
-                    getExcludedTime(methodBody, methodBodyInstrument, cumulativeTime);
-                    out.format("%-40s", methodName);
-                    out.format("%15s", totalCounter);
-                    out.format("%20s", (excludedTime / 1000000000));
-                    out.format("%20s", (cumulativeTime / 1000000000));
-                    if (methodBody.getSourceSection().getSource().getShortName().equals("builtins.rb")) {
-                        out.format("%9s", "-");
-                        out.format("%11s", "-");
-                    } else {
-                        out.format("%9s", methodBody.getSourceSection().getStartLine());
-                        out.format("%11s", methodBody.getSourceSection().getStartColumn());
-                    }
-                    out.println();
-                    totalCalls = totalCalls + totalCounter;
+                    getSelfTime(methodBody, methodBodyInstrument, totalTime);
+                    List<Long> times = new ArrayList<>();
+                    times.add(totalCounter);
+                    times.add(totalTime);
+                    times.add(selfTime);
+                    timeMap.put(methodBodyInstrument, times);
                 }
             }
-            out.println("Total number of executed calls: " + totalCalls);
+
+            printTime(timeMap);
         }
     }
 
-    private long[] getCumulativeCounterTime(String methodName, MethodBodyInstrument methodBodyInstrument,  List<TimeProfilerInstrument> callInstruments) {
+    private long[] getTotalCounterTime(String methodName, MethodBodyInstrument methodBodyInstrument,  List<TimeProfilerInstrument> callInstruments) {
         long totalCounter = 0;
         long cumulativeTime = 0;
 
@@ -123,8 +118,8 @@ public class ProfilerResultPrinter {
         return returnValues;
     }
 
-    public void getExcludedTime(Node methodBody, final MethodBodyInstrument methodBodyInstrument, long cumulativeTime) {
-      excludedTime = cumulativeTime;
+    public void getSelfTime(Node methodBody, final MethodBodyInstrument methodBodyInstrument, long cumulativeTime) {
+      selfTime = cumulativeTime;
 
       methodBody.accept(new NodeVisitor() {
           public boolean visit(Node node) {
@@ -160,7 +155,7 @@ public class ProfilerResultPrinter {
                                               /**
                                                * Do not exclude recursive calls
                                                */
-                                              excludedTime = excludedTime - subCallInstrument.getTime();
+                                              selfTime = selfTime - subCallInstrument.getTime();
                                           }
                                       }
                                   }
@@ -172,6 +167,46 @@ public class ProfilerResultPrinter {
           return true;
           }
       });
+    }
+
+    private void printTime(Map<MethodBodyInstrument, List<Long>> timesMap) {
+        Map<MethodBodyInstrument, List<Long>> sortedTimesMap;
+        if (Options.TRUFFLE_PROFILE_SORT.load()) {
+            sortedTimesMap = sortTimeProfilerResults(timesMap);
+        } else {
+            sortedTimesMap = timesMap;
+        }
+
+        long totalCalls = 0;
+
+        for (Map.Entry<MethodBodyInstrument, List<Long>> entry : sortedTimesMap.entrySet()) {
+            MethodBodyInstrument methodBodyInstrument = entry.getKey();
+            Node methodBody = methodBodyInstrument.getMethodBodyNode();
+            String methodName = ((RubyRootNode) methodBody.getRootNode()).getSharedMethodInfo().getName();
+
+            List<Long> times = entry.getValue();
+            long counter = times.get(0);
+            long totalTime = times.get(1);
+            long selfTime = times.get(2);
+
+            out.format("%-40s", methodName);
+            out.format("%15s", counter);
+            totalCalls = totalCalls + counter;
+            out.format("%20s", (totalTime / 1000000000));
+            out.format("%20s", (selfTime / 1000000000));
+            if (methodBody.getSourceSection().getSource().getShortName().equals("builtins.rb")) {
+                out.format("%9s", "-");
+                out.format("%11s", "-");
+            } else {
+                out.format("%9s", methodBody.getSourceSection().getStartLine());
+                out.format("%11s", methodBody.getSourceSection().getStartColumn());
+            }
+
+            out.println();
+            totalCalls = totalCalls + counter;
+        }
+
+        out.println("Total number of executed calls: " + totalCalls);
     }
 
     public void printControlFlowProfilerResults() {
@@ -519,6 +554,24 @@ public class ProfilerResultPrinter {
         }
         return result;
 
+    }
+
+    private static Map<MethodBodyInstrument, List<Long>> sortTimeProfilerResults(Map<MethodBodyInstrument, List<Long>> map) {
+        List<Map.Entry<MethodBodyInstrument, List<Long>>> list = new LinkedList<>(map.entrySet());
+
+        Collections.sort(list, new Comparator<Map.Entry<MethodBodyInstrument, List<Long>>>() {
+
+            public int compare(Map.Entry<MethodBodyInstrument, List<Long>> if1, Map.Entry<MethodBodyInstrument, List<Long>> if2) {
+                return Long.compare(if2.getValue().get(2).longValue(), if1.getValue().get(2).longValue());
+            }
+        });
+
+        Map<MethodBodyInstrument, List<Long>> result = new LinkedHashMap<>();
+        for (Map.Entry<MethodBodyInstrument, List<Long>> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+
+        return result;
     }
     
     private void printBanner(String caption, int size) {
