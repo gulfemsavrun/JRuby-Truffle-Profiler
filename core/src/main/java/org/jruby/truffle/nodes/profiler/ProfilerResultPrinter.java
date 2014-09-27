@@ -147,9 +147,16 @@ public class ProfilerResultPrinter {
                               DispatchHeadNode callDispatchNode = ((RubyCallNode)node).getDispatchHeadNode();
                               if (callDispatchNode.getNewDispatch() instanceof NewCachedDispatchNode) {
                                   NewCachedDispatchNode newCachedDispatchNode = (NewCachedDispatchNode)callDispatchNode.getNewDispatch();
+                                  RubyMethod method = null;
                                   if (newCachedDispatchNode instanceof NewCachedBoxedDispatchNode) {
                                       NewCachedBoxedDispatchNode newCachedBoxedDispatchNode = (NewCachedBoxedDispatchNode)newCachedDispatchNode;
-                                      RubyMethod method = newCachedBoxedDispatchNode.getRubyMethod();
+                                      method = newCachedBoxedDispatchNode.getRubyMethod();
+                                  } else if (newCachedDispatchNode instanceof NewCachedUnboxedDispatchNode) {
+                                      NewCachedUnboxedDispatchNode newCachedBoxedDispatchNode = (NewCachedUnboxedDispatchNode)newCachedDispatchNode;
+                                      method = newCachedBoxedDispatchNode.getRubyMethod();
+                                  }
+
+                                  if (method != null) {
                                       if (methodBodyInstrument.getRubyMethod() != null) {
                                           if (!method.getSharedMethodInfo().equals(methodBodyInstrument.getRubyMethod().getSharedMethodInfo())){
                                               /**
