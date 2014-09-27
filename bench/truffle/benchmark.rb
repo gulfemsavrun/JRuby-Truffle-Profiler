@@ -159,7 +159,7 @@ benchmarks.each do |benchmark|
         output = `ruby #{benchmark_path}.rb`
       elsif ruby_profiler
         #output = `ruby -rprofile #{benchmark_path}.rb`
-        output = `ruby-prof #{benchmark_path}.rb --sort=self`
+        output = `ruby-prof #{benchmark_path}.rb --sort=total`
         # Use puts to print the output of the ruby-prof profiler
         puts output
       elsif jruby

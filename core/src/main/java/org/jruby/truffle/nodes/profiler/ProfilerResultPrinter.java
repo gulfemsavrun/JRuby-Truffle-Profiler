@@ -562,7 +562,7 @@ public class ProfilerResultPrinter {
         Collections.sort(list, new Comparator<Map.Entry<MethodBodyInstrument, List<Long>>>() {
 
             public int compare(Map.Entry<MethodBodyInstrument, List<Long>> if1, Map.Entry<MethodBodyInstrument, List<Long>> if2) {
-                return Long.compare(if2.getValue().get(2).longValue(), if1.getValue().get(2).longValue());
+                return Long.compare(if2.getValue().get(1).longValue(), if1.getValue().get(1).longValue());
             }
         });
 
