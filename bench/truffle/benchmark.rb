@@ -163,9 +163,9 @@ benchmarks.each do |benchmark|
         # Use puts to print the output of the ruby-prof profiler
         puts output
       elsif jruby
-        output = `../../bin/jruby -J-server -J-Xmx2G #{benchmark_path}.rb`
+        output = `../../bin/jruby -Xcompile.invokedynamic=true #{benchmark_path}.rb`
       elsif jruby_profiler
-        output = `../../bin/jruby -J-server -J-Xmx2G --profile #{benchmark_path}.rb`
+        output = `../../bin/jruby -Xcompile.invokedynamic=true --profile #{benchmark_path}.rb`
       elsif simple_truffle
         output = `../../bin/jruby -J-server -J-Xmx2G -X+T #{benchmark_path}.rb`
       else
