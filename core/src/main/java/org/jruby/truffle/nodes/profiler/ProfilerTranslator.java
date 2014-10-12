@@ -89,7 +89,7 @@ public class ProfilerTranslator implements NodeVisitor {
 
     @Override
     public boolean visit(Node node) {    	
-        if (Options.TRUFFLE_PROFILE_CALLS.load()) {
+        if (Options.TRUFFLE_PROFILE_CALLS.load() || Options.TRUFFLE_PROFILE_BUILTIN_CALLS.load()) {
             profileCalls(node);
         }
 
@@ -118,16 +118,17 @@ public class ProfilerTranslator implements NodeVisitor {
         } else if (node instanceof RubyCallNode) {
             RubyCallNode callNode = (RubyCallNode) node;
             String name = callNode.getName();
-//            if (isTranslatingBlock) {
-//                if(!operators.contains(name) && !collectionAccessOperators.contains(name)) {
-//                    createCallWrapper((RubyNode)node);
-//                }
-//            } else if (usedDefinedMethods.contains(name)) {
-//                createCallWrapper((RubyNode)node);
-//            }
-
-            createCallWrapper((RubyNode)node);
-
+            if (Options.TRUFFLE_PROFILE_BUILTIN_CALLS.load()) {
+                createCallWrapper((RubyNode)node);
+            } else {
+                if (isTranslatingBlock) {
+                    if(!operators.contains(name) && !collectionAccessOperators.contains(name)) {
+                        createCallWrapper((RubyNode)node);
+                    }
+                } else if (usedDefinedMethods.contains(name)) {
+                    createCallWrapper((RubyNode)node);
+                }
+            }
         }
     }
     
