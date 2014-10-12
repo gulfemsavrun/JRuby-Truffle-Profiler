@@ -159,7 +159,8 @@ benchmarks.each do |benchmark|
         output = `ruby #{benchmark_path}.rb`
       elsif ruby_profiler
         #output = `ruby -rprofile #{benchmark_path}.rb`
-        output = `ruby-prof #{benchmark_path}.rb --sort=total`
+        #output = `ruby-prof #{benchmark_path}.rb --sort=total`
+        output = `ruby-prof --exclude "Bignum|Fixnum|Float|Integer|Numeric|Rational|String|Array|BasicObject|Enumerable|Range|Kernel|Module#." --sort=total #{benchmark_path}.rb`
         # Use puts to print the output of the ruby-prof profiler
         puts output
       elsif jruby

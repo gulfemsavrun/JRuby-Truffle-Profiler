@@ -88,7 +88,7 @@ end
 
 def sample
   #(spectral_norm(400) - 1.2742240813922308).abs < 0.000001
-  spectral_norm(5500)
+  spectral_norm(3000)
 end
 
 def name
