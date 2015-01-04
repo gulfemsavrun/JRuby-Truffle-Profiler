@@ -56,6 +56,10 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         }
     }
 
+    public ProbeNode getProbeNode() {
+        return probeNode;
+    }
+
     public RubyNode getChild() {
         return child;
     }

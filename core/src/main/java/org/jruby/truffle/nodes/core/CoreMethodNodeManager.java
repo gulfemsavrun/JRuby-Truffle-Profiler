@@ -12,14 +12,18 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.nodes.profiler.ProfilerProber;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -28,7 +32,9 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.util.cli.Options;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +54,8 @@ public abstract class CoreMethodNodeManager {
             }
         }
     }
+
+    private static int index = 1;
 
     private static void addMethod(RubyClass rubyObjectClass, MethodDetails methodDetails) {
         assert rubyObjectClass != null;
@@ -102,6 +110,34 @@ public abstract class CoreMethodNodeManager {
 
         final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
                 Truffle.getRuntime().createCallTarget(rootNode), null);
+
+        /**
+         * TODO
+         * Builtin core source sections do not have actual source sections, they a
+         * re basically null source sections
+         * To profile builtins, dummy source sections from a builtins file are assigned.
+         * It's better to come up with a better implementation
+         */
+        if (Options.TRUFFLE_PROFILE_BUILTIN_CALLS.load()) {
+            Source source = null;
+            try {
+                source = Source.fromFileName("builtins.rb");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (rootNode.getBody() != null) {
+                if (rootNode.getBody().getSourceSection() != null && rootNode.getBody().getSourceSection() instanceof CoreSourceSection) {
+                    SourceSection sourceSection = source.createSection("builtin-in", index);
+                    rootNode.getBody().clearSourceSection();
+                    rootNode.getBody().assignSourceSection(sourceSection);
+                    RubyWrapperNode wrapperNode = null;
+                    wrapperNode = ProfilerProber.getInstance().probeAsMethodBody(rootNode.getBody(), method);
+                    rootNode.getBody() .replace(wrapperNode);
+                    index++;
+                }
+            }
+        }
 
         if (anno.isModuleFunction()) {
             addMethod(module, method, aliases, Visibility.PRIVATE);

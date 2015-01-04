@@ -181,4 +181,7 @@ public abstract class CachedBoxedDispatchNode extends CachedDispatchNode {
                 method == null ? "null" : method.toString());
     }
 
+    public RubyMethod getMethod() {
+        return method;
+    }
 }

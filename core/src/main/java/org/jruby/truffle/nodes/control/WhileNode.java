@@ -42,6 +42,10 @@ public class WhileNode extends RubyNode {
         return getContext().getCoreLibrary().getNilObject();
     }
 
+    public RubyNode getBody() {
+        return ((WhileRepeatingNode) loopNode.getRepeatingNode()).getBody();
+    }
+
     private static class WhileRepeatingNode extends Node implements RepeatingNode {
 
         private final RubyContext context;
@@ -75,6 +79,9 @@ public class WhileNode extends RubyNode {
             }
         }
 
+        public RubyNode getBody() {
+            return body;
+        }
     }
 
 }

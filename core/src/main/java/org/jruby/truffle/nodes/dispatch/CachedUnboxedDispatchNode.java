@@ -161,4 +161,8 @@ public abstract class CachedUnboxedDispatchNode extends CachedDispatchNode {
         return !(receiverObject instanceof RubyBasicObject);
     }
 
+    public RubyMethod getMethod() {
+        return method;
+    }
+
 }

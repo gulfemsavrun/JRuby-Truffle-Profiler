@@ -23,12 +23,14 @@ import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SetFrameVisibilityNode;
+import org.jruby.truffle.nodes.profiler.ProfilerTranslator;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -205,8 +207,44 @@ public class RubyContext extends ExecutionContext {
         final RubyRootNode rootNode = translator.parse(context, source, defaultEncoding, parserContext, parentFrame, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
+        /**
+         * When a profiler related option is enabled, {@link ProfilerTranslator} traverses the module to create {@link RubyWrapper} wrapper nodes.
+         */
+        ProfilerTranslator profilerTranslator = null;
+
+        if (Options.TRUFFLE_PROFILE_CALLS.load()
+                || Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()
+                || Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load()
+                || Options.TRUFFLE_PROFILE_OPERATIONS.load()
+                || Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
+            profilerTranslator = ProfilerTranslator.getInstance();
+            profilerTranslator.translate(rootNode, true, false, null);
+        }
+
         // TODO(CS): we really need a method here - it's causing problems elsewhere
-        return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
+        Object value = callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
+
+        if (Options.TRUFFLE_PROFILE_CALLS.load()) {
+            profilerTranslator.getProfilerResultPrinter().printCallProfilerResults();
+        }
+
+        if (Options.TRUFFLE_PROFILE_CONTROL_FLOW.load()) {
+            profilerTranslator.getProfilerResultPrinter().printControlFlowProfilerResults();
+        }
+
+        if (Options.TRUFFLE_PROFILE_VARIABLE_ACCESSES.load()) {
+            profilerTranslator.getProfilerResultPrinter().printVariableAccessProfilerResults();
+        }
+
+        if (Options.TRUFFLE_PROFILE_OPERATIONS.load()) {
+            profilerTranslator.getProfilerResultPrinter().printOperationProfilerResults();
+        }
+
+        if (Options.TRUFFLE_PROFILE_COLLECTION_OPERATIONS.load()) {
+            profilerTranslator.getProfilerResultPrinter().printCollectionOperationProfilerResults();
+        }
+
+        return value;
     }
 
     public long getNextObjectID() {

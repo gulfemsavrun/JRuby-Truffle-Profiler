@@ -154,6 +154,15 @@ public class Options {
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_AST = string(TRUFFLE, "truffle.translator.print_asts", "", "Comma delimited list of method names to print the AST of after translation.");
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_FULL_AST = string(TRUFFLE, "truffle.translator.print_full_asts", "", "Comma delimited list of method names to print the full AST of after translation.");
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE = string(TRUFFLE, "truffle.translator.print_parse_trees", "", "Comma delimited list of method names to print the JRuby parse tree of before translation.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_CALLS = bool(TRUFFLE, "truffle.profile.calls", false, "Profile function invocations.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_BUILTIN_CALLS = bool(TRUFFLE, "truffle.profile.builtin_calls", false, "Profile built in function invocations.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_CONTROL_FLOW = bool(TRUFFLE, "truffle.profile.control_flow", false, "Profile control flow.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_VARIABLE_ACCESSES = bool(TRUFFLE, "truffle.profile.variable_accesses", false, "Profile variable accesses.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_OPERATIONS = bool(TRUFFLE, "truffle.profile.operations", false, "Profile operation nodes.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_COLLECTION_OPERATIONS = bool(TRUFFLE, "truffle.profile.collection_operations", false, "Profile collection operations.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_TYPE_DISTRIBUTION = bool(TRUFFLE, "truffle.profile.type_distribution", false, "Profile type distribution.");
+    public static final Option<Boolean> TRUFFLE_PROFILE_SORT = bool(TRUFFLE, "truffle.profile.sort", false, "Sort profile results.");
+
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

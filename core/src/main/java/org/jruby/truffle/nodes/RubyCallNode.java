@@ -223,4 +223,7 @@ public class RubyCallNode extends RubyNode {
         return isVCall;
     }
 
+    public DispatchHeadNode getDispatchHeadNode() {
+        return dispatchHead;
+    }
 }
